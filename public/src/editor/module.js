@@ -11,7 +11,8 @@ define( [ "localized", "core/eventmanager", "core/trackevent", "./editor",
           "ui/toggler", "util/lang", "l10n!/layouts/editor-area.html",
           "./default", "core/logger", "./header",
           // Included here to register themselves.
-          "./media-gallery-editor", "./project-editor", "./sequencer-editor", "./tutorial-editor" ],
+          "./media-gallery-editor", "./project-editor", "./sequencer-editor", "./chapter-editor",
+          "./tutorial-editor" ],
   function( Localized, EventManager, TrackEvent, Editor,
             Toggler, LangUtils, EDITOR_AREA_LAYOUT,
             DefaultEditor, Logger, Header ){
@@ -151,6 +152,10 @@ define( [ "localized", "core/eventmanager", "core/trackevent", "./editor",
      */
     _this.editTrackEvent = function( trackEvent ) {
       var editorType = Editor.isRegistered( trackEvent.type ) ? trackEvent.type : "default";
+
+      if( trackEvent.type == "toc" ) {
+        editorType = "chapter-editor";
+      }
 
       if ( !trackEvent || !( trackEvent instanceof TrackEvent ) ) {
         throw new Error( "trackEvent must be valid to start an editor." );

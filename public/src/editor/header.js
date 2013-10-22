@@ -7,6 +7,7 @@ define([ "localized", "ui/widget/tooltip" ], function( Localized, Tooltip ) {
   return function( editorAreaDOMRoot, editorModule ) {
     var _mediaButton = editorAreaDOMRoot.querySelector( ".butter-editor-header-media" ),
         _popcornButton = editorAreaDOMRoot.querySelector( ".butter-editor-header-popcorn" ),
+        _chapterButton = editorAreaDOMRoot.querySelector( ".butter-editor-header-chapter" ),
         _projectButton = editorAreaDOMRoot.querySelector( ".butter-editor-header-share" ),
         _tutorialButton = editorAreaDOMRoot.querySelector( ".butter-editor-tutorial" ),
         _waitForMediaTooltip;
@@ -14,6 +15,7 @@ define([ "localized", "ui/widget/tooltip" ], function( Localized, Tooltip ) {
     var _focusMap = {
       "media-editor": _mediaButton,
       "plugin-list": _popcornButton,
+      "chapter-editor": _chapterButton,
       "project-editor": _projectButton,
       "tutorial-editor": _tutorialButton
     };
@@ -41,6 +43,11 @@ define([ "localized", "ui/widget/tooltip" ], function( Localized, Tooltip ) {
     }
 
     _projectButton.addEventListener( "click", openProjectEditor, false );
+
+    _chapterButton.addEventListener( "click", function() {
+      editorModule.openEditor( "chapter-editor" );
+    }, false );
+
     _tutorialButton.addEventListener( "click", function() {
       editorModule.openEditor( "tutorial-editor" );
     }, false );

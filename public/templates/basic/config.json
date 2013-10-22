@@ -8,6 +8,7 @@
     "popup": "{{baseDir}}templates/assets/editors/popup/popup-editor.js",
     "image": "{{baseDir}}templates/assets/editors/image/image-editor.js",
     "text": "{{baseDir}}templates/assets/editors/text/text-editor.js",
+    "toc": "{{baseDir}}templates/assets/editors/toc/toc-editor.js",
     "sketchfab": "{{baseDir}}templates/assets/editors/sketchfab/sketchfab-editor.js"
   },
   "maxPluginZIndex": 1000

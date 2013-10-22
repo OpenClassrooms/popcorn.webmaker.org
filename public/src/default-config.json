@@ -64,6 +64,11 @@
         "type": "sequencer",
         "hidden": true,
         "icon": "{{baseDir}}resources/icons/media.png"
+      },
+      {
+        "type": "toc",
+        "hidden": true,
+        "icon": "{{baseDir}}templates/assets/plugins/toc/toc-icon.png"
       }
     ]
   },

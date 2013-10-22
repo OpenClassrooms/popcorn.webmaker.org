@@ -245,7 +245,9 @@ app.get( '/layouts/status-area.html', routes.path( '/layouts/status-area.html' )
 app.get( '/layouts/media-editor.html', routes.path( '/layouts/media-editor.html' ) );
 app.get( '/layouts/controls.html', routes.path( '/layouts/controls.html' ) );
 app.get( '/layouts/media-instance.html', routes.path( '/layouts/media-instance.html' ) );
+app.get( '/layouts/chapter-editor.html', routes.path( '/layouts/chapter-editor.html' ) );
 app.get( '/layouts/project-editor.html', routes.path( '/layouts/project-editor.html' ) );
+app.get( '/layouts/project-editor2.html', routes.path( '/layouts/project-editor2.html' ) );
 app.get( '/layouts/editor-area.html', routes.path( '/layouts/editor-area.html' ) );
 app.get( '/layouts/plugin-list-editor.html', routes.path( '/layouts/plugin-list-editor.html' ) );
 app.get( '/layouts/sequencer-editor.html', routes.path( '/layouts/sequencer-editor.html' ) );
@@ -264,6 +266,7 @@ app.get( '/templates/assets/editors/googlemap/googlemap-editor.html', routes.pat
 app.get( '/templates/assets/editors/popup/popup-editor.html', routes.path( '/plugins/popup-editor.html' ) );
 app.get( '/templates/assets/editors/image/image-editor.html', routes.path( '/plugins/image-editor.html' ) );
 app.get( '/templates/assets/editors/text/text-editor.html', routes.path( '/plugins/text-editor.html' ) );
+app.get( '/templates/assets/editors/toc/toc-editor.html', routes.path( '/plugins/toc-editor.html' ) );
 app.get( '/templates/assets/editors/sketchfab/sketchfab-editor.html', routes.path( '/plugins/sketchfab-editor.html' ) );
 
 // Localized Strings
