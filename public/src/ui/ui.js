@@ -178,6 +178,9 @@ define( [ "core/eventmanager", "./toggler",
           function firstRunInit() {
             butter.unlisten( "mediaready", firstRunInit );
 
+            // Open the chapter editor as well
+            butter.editor.openEditor( "chapter-editor" );
+            
             // Open the media-editor editor right after butter is finished starting up
             butter.editor.openEditor( "media-editor" );
             if ( butter.project.publishUrl ||
