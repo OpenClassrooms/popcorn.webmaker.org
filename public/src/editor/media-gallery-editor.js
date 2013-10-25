@@ -16,6 +16,8 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
 
       _urlInput = _addMediaPanel.querySelector( ".add-media-input" ),
       _addBtn = _addMediaPanel.querySelector( ".add-media-btn" ),
+      _addAllBtn = _parentElement.querySelector( ".add-all-btn" ),
+      _validMessage = _parentElement.querySelector( ".media-valid-message" ),
       _errorMessage = _parentElement.querySelector( ".media-error-message" ),
       _loadingSpinner = _parentElement.querySelector( ".media-loading-spinner" ),
 
@@ -46,12 +48,16 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
       _currentSearch = "YouTube",
       _butter,
       _media,
+      _mediaTrack,
       _mediaLoadTimeout,
       _cancelSpinner,
       _LIMIT = CONFIG.sync_limit,
       MEDIA_LOAD_TIMEOUT = 10000,
       _this,
       TRANSITION_TIME = 2000,
+      MEDIA_EXISTING = "One or more media are already in the gallery",
+      MEDIA_LOADING_ERROR = "One or more media have failed to load",
+      MEDIA_LOADED = "Your media source(s) have been loaded",
       _photoTypes = [
         "Giphy",
         "Flickr"
@@ -181,6 +187,34 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
     _butter.generateSafeTrackEvent( "sequencer", popcornOptions );
   }
 
+  function updateDuration( val ) {
+    var seconds = Time.toSeconds( val );
+
+    if ( seconds <= 0 ) {
+      seconds = _media.duration;
+    }
+
+    _media.url = "#t=," + seconds;
+  }
+
+  function setNewDuration( duration ) {
+    var durationSeconds = Time.toSeconds( duration );
+
+    if ( durationSeconds <= 0 ) {
+      durationSeconds = _media.duration;
+    }
+
+    _media.duration = duration;
+
+    // If the seconds version of the duration is already our current duration
+    // bail early.
+    if ( durationSeconds === _media.duration ) {
+      return;
+    }
+
+    _media.url = "#t=," + durationSeconds;
+  }
+
   function addMedia( data, options ) {
     var el = options.element || _GALLERYITEM.cloneNode( true ),
         container = options.container,
@@ -189,6 +223,9 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
         thumbnailImg,
         thumbnailSrc = data.thumbnail,
         source = data.source;
+
+    $(el).data('metaData', data);
+    $(el).data('hasTrackEvent', false);
 
     data.duration = ( +data.duration );
 
@@ -306,9 +343,40 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
     } else {
       onDenied( Localized.get( "Your gallery already has that media added to it" ) );
     }
+    // Call next media loading
+    data.next();
   }
 
-  function addMediaToGallery( url, onDenied ) {
+  function createAddMediaTask( url ) {
+    return function( next ) {
+      addMediaToGallery( url, next, onDenied );
+    }
+  }
+
+  function addAllMediaToGallery( urlInput ) {
+    urlInput = urlInput.replace(/(\n|\r|\r\n)/g, ' ');
+    var urlList = urlInput.split(' ');
+    // Fetch all urls from input
+    for(i = 0; i < urlList.length; i++) {
+      $(_galleryPanel).queue( 'addAllMediaTask', createAddMediaTask( urlList[i] ) );
+    }
+
+    _loadingSpinner.classList.remove( "hidden" );
+
+    $(_galleryPanel).queue('addAllMediaTask', function(){
+        _validMessage.innerHTML = MEDIA_LOADED;
+        _errorMessage.classList.add( "hidden" );
+        _validMessage.classList.remove( "hidden" );
+        resetInput();
+        setTimeout( function() {
+          _validMessage.classList.add( "hidden" );
+          _loadingSpinner.classList.add( "hidden" );
+        }, 5000 );
+    });
+    $(_galleryPanel).dequeue('addAllMediaTask');
+  }
+
+  function addMediaToGallery( url, next, onDenied ) {
     var data = {};
 
     // Don't trigger with empty inputs
@@ -324,11 +392,12 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
     data.source = url;
     data.type = "sequencer";
     _mediaLoadTimeout = setTimeout( function() {
+      next();
       _errorMessage.innerHTML = Localized.get( "Your media source is taking too long to load" );
       _errorMessage.classList.remove( "hidden" );
       _addMediaPanel.classList.add( "invalid-field" );
     }, MEDIA_LOAD_TIMEOUT );
-    MediaUtils.getMetaData( data.source, onSuccess, onDenied );
+    MediaUtils.getMetaData( data.source, onSuccess, onDenied, next );
   }
 
   function onFocus() {
@@ -375,7 +444,7 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
     }, 300 );
     _addBtn.classList.add( "hidden" );
     _urlInput.value = formatSource( _urlInput.value );
-    addMediaToGallery( _urlInput.value, onDenied );
+    addAllMediaToGallery( _urlInput.value, onDenied );
   }
 
   function addPhotoCallback( popcornOptions, data ) {
@@ -593,6 +662,62 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
         searchAPIs( true );
       }
     }, false );
+
+    _addAllBtn.addEventListener( "click", onAddAllMediaClick, false );
+  }
+
+  function onAddAllMediaClick() {
+    var $galleryList = $($(_galleryList).find('li.media-gallery-item').get().reverse()),
+      newMediaDuration = 0,
+      lastStart = 0,
+      lastEnd;
+
+    // First adjust media total duration
+    $galleryList.each(function() {
+      var data = $(this).data("metaData");
+      newMediaDuration += data.duration;
+    });
+
+    setNewDuration( newMediaDuration );
+
+    // Then add clips
+    $galleryList.each(function() {
+      var data = $(this).data("metaData"),
+        hasTrackEvent = $(this).data("hasTrackEvent");
+      lastEnd = lastStart + data.duration;
+
+      if( !hasTrackEvent ) {
+        addTrackEvent(data);
+      }
+
+      $(this).data("hasTrackEvent", true);
+      // Add secturity margin to prevent the system to add trackevents
+      // in a different track
+      lastStart = lastEnd + 0.01;
+    });
+
+    function addTrackEvent(data) {
+      var popcornOptions = {
+        source: URI.makeUnique( data.source ).toString(),
+        denied: data.denied,
+        start: lastStart || 0,
+        end: lastEnd,
+        from: data.from || 0,
+        title: data.title,
+        duration: data.duration,
+        hidden: data.hidden || false
+      };
+
+      trackEvent = _butter.generateSafeTrackEvent( "sequencer", popcornOptions, _mediaTrack );
+
+      if(!_mediaTrack) {
+        _mediaTrack = trackEvent.track;
+      }
+      _media.dispatch("sequencetrackeventadded", trackEvent);
+    }
+
+    // Send sequence track to chapter editor
+    ///_media.dispatch("sequencetrackadded", _mediaTrack);
   }
 
   Editor.register( "media-editor", null, function( rootElement, butter ) {

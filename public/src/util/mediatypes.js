@@ -77,7 +77,7 @@ define( [ "localized", "util/uri" ],
       }
       return "HTML5";
     },
-    getMetaData: function( baseUrl, successCallback, errorCallback ) {
+    getMetaData: function( baseUrl, successCallback, errorCallback, nextCallback ) {
       var id,
           userId,
           parsedUri,
@@ -88,6 +88,7 @@ define( [ "localized", "util/uri" ],
 
       successCallback = successCallback || function(){};
       errorCallback = errorCallback || function(){};
+      nextCallback = nextCallback || function(){};
 
       if ( type === "YouTube" ) {
         parsedUri = URI.parse( baseUrl );
@@ -148,7 +149,8 @@ define( [ "localized", "util/uri" ],
               thumbnail: respData.thumbnail.hqDefault,
               author: respData.uploader,
               duration: popcorn.duration(),
-              from: from
+              from: from,
+              next: nextCallback
             });
           }
 
@@ -192,7 +194,8 @@ define( [ "localized", "util/uri" ],
             thumbnail: respData.artwork_url || "../../resources/icons/soundcloud-small.png",
             duration: respData.duration / 1000,
             title: respData.title,
-            hidden: true
+            hidden: true,
+            next: nextCallback
           });
         });
       } else if ( type === "Vimeo" ) {
@@ -210,7 +213,8 @@ define( [ "localized", "util/uri" ],
             type: type,
             thumbnail: respData.thumbnail_small,
             duration: respData.duration,
-            title: respData.title
+            title: respData.title,
+            next: nextCallback
           });
         });
       } else if ( type === "Archive" ) {
@@ -246,7 +250,8 @@ define( [ "localized", "util/uri" ],
               title: respData.title,
               thumbnail: respData.thumb,
               linkback: respData.linkback,
-              duration: videoElem.duration
+              duration: videoElem.duration,
+              next: nextCallback
             });
           }, false );
           videoElem.src = URI.makeUnique( respData.media ).toString();
@@ -256,7 +261,8 @@ define( [ "localized", "util/uri" ],
           source: baseUrl,
           type: type,
           title: baseUrl,
-          duration: +REGEX_MAP[ "null" ].exec( baseUrl )[ 1 ]
+          duration: +REGEX_MAP[ "null" ].exec( baseUrl )[ 1 ],
+          next: nextCallback
         });
       } else if ( type === "HTML5" ) {
         videoElem = document.createElement( "video" );
@@ -266,7 +272,8 @@ define( [ "localized", "util/uri" ],
             type: type,
             title: baseUrl.substring( baseUrl.lastIndexOf( "/" ) + 1 ),
             thumbnail: URI.makeUnique( baseUrl ).toString(),
-            duration: videoElem.duration
+            duration: videoElem.duration,
+            next: nextCallback
           });
         }, false );
         videoElem.addEventListener( "error", function() {

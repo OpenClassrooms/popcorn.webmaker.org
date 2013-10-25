@@ -42,11 +42,14 @@
         <a class="add-media-btn butter-btn btn-green hidden">{{ gettext("Create clip") }}</a>
         <span class="media-loading-spinner butter-spinner hidden" ></span>
         <label class="media-error-message hidden"></label>
+        <label class="media-valid-message hidden"></label>
       </span>
     </fieldset>
 
     <div class="media-gallery">
-      <div class="media-gallery-heading">{{ gettext("My Media Gallery") }}</div>
+      <div class="media-gallery-heading">{{ gettext("My Media Gallery") }}
+      <a class="butter-btn btn-light btn-green add-all-btn" target="_blank"><span class="icon icon-white icon-plus"></span>{{ gettext("Add all") }}</a>
+      </div>
       <div class="media-gallery-scroll-container scrollbar-container">
         <div class="scrollbar-outer scrollbar-inner">
           <ul class="media-gallery-list" id="project-items" data-page="1"></ul>

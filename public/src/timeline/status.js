@@ -69,6 +69,7 @@ define( [ "util/time", "util/keys" ], function( util, Keys ){
 
     _media.listen( "mediadurationchanged", function() {
       _durationInput.value = util.toTimecode( _media.duration, 0 );
+      updateDuration( _durationInput.value );
     });
 
     function updateDuration( val ) {
