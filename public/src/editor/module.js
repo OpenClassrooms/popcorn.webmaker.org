@@ -153,7 +153,7 @@ define( [ "localized", "core/eventmanager", "core/trackevent", "./editor",
     _this.editTrackEvent = function( trackEvent ) {
       var editorType = Editor.isRegistered( trackEvent.type ) ? trackEvent.type : "default";
 
-      if( trackEvent.type == "toc" ) {
+      if( trackEvent.type == "toc" || trackEvent.type == "chapter" ) {
         editorType = "chapter-editor";
       }
 

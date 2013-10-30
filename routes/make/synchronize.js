@@ -4,11 +4,19 @@ var utils = require( "../../lib/utilities" ),
 module.exports = function( req, res, next ) {
   var project = req.project;
 
+  console.log("Routes.make.synchronize");
+
   if ( !project ) {
     return next( utils.error( 404, "No Project Found" ) );
   }
 
+
   if ( !project.makeid ) {
+    console.log("makeClient.create");
+    console.log("project.name: "+project.name);
+    console.log("project.author: "+project.author);
+    console.log("project.email: "+project.email);
+    
     makeClient.create({
       title: project.name,
       author: project.author,
@@ -25,6 +33,9 @@ module.exports = function( req, res, next ) {
         return next( utils.error( 500, error.toString() ) );
       }
 
+      console.log("error: "+error);
+      console.log("make: "+make);
+
       project.updateAttributes({ makeid: make._id })
       .error( function( error ) {
         return next( utils.error( 500, "Failed to add Make ID" ) );
@@ -34,6 +45,7 @@ module.exports = function( req, res, next ) {
       });
     });
   } else {
+    console.log("makeClient.update: "+project.makeid);
     makeClient.update( project.makeid, {
       maker: project.email,
       make: {

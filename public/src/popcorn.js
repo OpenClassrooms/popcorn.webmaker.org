@@ -31,6 +31,7 @@ requirejs.config({
     "popcorn.skip": "../templates/assets/plugins/skip/popcorn.skip",
     "popcorn.text": "../templates/assets/plugins/text/popcorn.text",
     "popcorn.toc": "../templates/assets/plugins/toc/popcorn.toc",
+    "popcorn.chapter": "../templates/assets/plugins/chapter/popcorn.chapter",
     "popcorn.wikipedia": "../templates/assets/plugins/wikipedia/popcorn.wikipedia",
     "popcorn.deprecated": "../src/util/deprecated",
 
@@ -74,6 +75,7 @@ requirejs.config({
     "popcorn.skip": [ "popcorn.core" ],
     "popcorn.text": [ "popcorn.core" ],
     "popcorn.toc": [ "popcorn.core" ],
+    "popcorn.chapter": [ "popcorn.core" ],
     "popcorn.wikipedia": [ "popcorn.core" ],
     "popcorn.sketchfab": [ "popcorn.core", "sketchfab-iframe" ],
     "popcorn.deprecated": [ "popcorn.core" ]
@@ -96,6 +98,7 @@ define([
   "popcorn.skip",
   "popcorn.text",
   "popcorn.toc",
+  "popcorn.chapter",
   "popcorn.wikipedia",
   "popcorn.deprecated",
   "popcorn.HTMLMediaElement",

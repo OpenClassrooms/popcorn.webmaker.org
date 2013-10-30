@@ -1,5 +1,7 @@
 var metrics = require( "../../lib/metrics" ),
-    escapeHTML = require( "../../lib/sanitizer" ).escapeHTML;
+    escapeHTML = require( "../../lib/sanitizer" ).escapeHTML,
+    // Bypass personna
+    DEFAULT_EMAIL = "anyuser@anyuser.com";
 
 function sanitizeProjectData( projectData ) {
   projectData.name = escapeHTML( projectData.name || '' );
@@ -16,7 +18,7 @@ module.exports = function( Project ) {
 
     if ( req.body.id ) {
 
-      Project.update( { email: req.session.email, id: req.body.id, data: projectData },
+      Project.update( { email: DEFAULT_EMAIL, id: req.body.id, data: projectData },
                       function( err, doc ) {
         if ( err ) {
           res.json( 500, { error: err } );
@@ -30,21 +32,30 @@ module.exports = function( Project ) {
       });
     } else {
 
-      Project.create( { email: req.session.email, data: projectData }, function( err, doc ) {
+      Project.create( { email: DEFAULT_EMAIL, data: projectData }, function( err, doc ) {
         if ( err ) {
+          console.log("Project Create Error: "+err);
           res.json( 500, { error: err } );
           metrics.increment( 'error.save' );
           return;
         }
 
+        console.log("Project.create success: "+JSON.stringify(doc));
         req.project = doc;
+
+        //console.log("Project id: "+projectData.makeid);
         req.remixedMakeId = projectData.makeid;
         req.makeTags = projectData.tags;
+
+        // Send back the newly added row's ID
+        res.json( { error: 'okay', project: doc } );
+
         metrics.increment( 'project.create' );
         if ( doc.remixedFrom ) {
           metrics.increment( 'project.remix' );
         }
-        next();
+        // Prevent next for claire
+        //next();
       });
     }
   };

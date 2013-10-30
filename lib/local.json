@@ -1,0 +1,16 @@
+{
+	"MAKE_ENDPOINT": "http://localhost:8888",
+	"USER_SUBDOMAIN": "http://localhost:8888",
+	"publishStore": {
+	  "type": "local",
+	  "options": {
+	    "hostname": "http://localhost:8888",
+	    "root": "./generated",
+	    "namePrefix": "view",
+	    "nameSuffix": ".html"
+	  }
+	},
+  "staticMiddleware": {
+    "maxAge": "0"
+  }
+}

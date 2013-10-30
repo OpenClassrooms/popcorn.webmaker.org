@@ -6,7 +6,7 @@ define( [ "util/xhr", "sso-include" ], function( xhr ) {
 
   var Cornfield = function( butter ) {
 
-    var authenticated = false,
+    var authenticated = true,
         username = "",
         self = this;
 
@@ -36,12 +36,35 @@ define( [ "util/xhr", "sso-include" ], function( xhr ) {
       }
     };
 
+    function onLogin( webmakerEmail, webmakerUserName ) {
+        function finishCallback() {
+          authenticated = true;
+          username = webmakerUserName;
+          butter.dispatch( "authenticated" );
+        }
+        if ( butter.project && butter.project.id ) {
+          xhr.get( "/api/project/" + butter.project.id, function( res ) {
+            if ( res.status !== 404 ) {
+              return finishCallback();
+            }
+
+            // They didn't own the project. Use the logic we have to force remixes on butter load.
+            window.location.reload();
+          });
+        } else {
+          finishCallback();
+        }
+      }
+
     this.username = function() {
       return username;
     };
 
     this.authenticated = function() {
-      return authenticated;
+      // Auto login to bypass persona
+      authenticated = true;
+      return true;
+      //return authenticated;
     };
 
     function publishPlaceholder( id, callback ) {

@@ -69,6 +69,11 @@
         "type": "toc",
         "hidden": true,
         "icon": "{{baseDir}}templates/assets/plugins/toc/toc-icon.png"
+      },
+      {
+        "type": "chapter",
+        "hidden": true,
+        "icon": "{{baseDir}}templates/assets/plugins/chapter/chapter-icon.png"
       }
     ]
   },

@@ -114,6 +114,8 @@ The default server configuration can be found in [lib/default-config.js](lib/def
 
 The `fileStore` type is used to setup a backend for storing data:
 
+
+
    - `type` the type of file store to use.  Possible values include `local` (i.e., local file system) and `s3` (i.e., Amazon S3)
    - `options` options for the file store, which depends on the type chosen.
       - `hostname` the hostname to use for constructing urls if different than `embedHostname`

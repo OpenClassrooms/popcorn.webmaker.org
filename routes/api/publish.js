@@ -1,18 +1,41 @@
-var async = require( "async" ),
+var express = require('express'),
+    app = express(),
+    async = require( "async" ),
     metrics = require( "../../lib/metrics" ),
     s3 = require( "../../lib/s3" ),
     sanitizer = require( "../../lib/sanitizer" ),
-    utilities = require( "../../lib/utilities" );
+    utilities = require( "../../lib/utilities" ),
+    filestore = require('../../lib/file-store.js'),
+    config = require('../../lib/config.js');
 
 module.exports = function( req, res ) {
   var description = res.locals.project.description || "Created with Popcorn Maker - part of the Mozilla Webmaker initiative",
       iframeUrl = utilities.embedURL( req.session.username, res.locals.project.id ),
       projectData = JSON.parse( res.locals.project.data, sanitizer.escapeHTMLinJSON ),
       publishUrl = utilities.embedShellURL( req.session.username, res.locals.project.id ),
-      projectUrl = "/editor/" + res.locals.project.id;
+      projectUrl = "/editor/" + res.locals.project.id
+      stores = {};
+
+function setupStore( storeConfig ) {
+  var store = filestore.create( storeConfig.type, storeConfig.options );
+  if ( store.requiresFileSystem ) {
+    console.log("store.requiresFileSystem");
+    app.use( express.static( store.root, JSON.parse( JSON.stringify( config.staticMiddleware ) ) ) );
+  }
+  return store;
+}
+
+  console.log("publish.js iframeUrl: "+iframeUrl);
+  console.log("publish.js publishUrl: "+publishUrl);
+  console.log("publish.js projectUrl: "+projectUrl);
 
   var mediaUrl = projectData.media[ 0 ].url,
       attribURL = Array.isArray( mediaUrl ) ? mediaUrl[ 0 ] : mediaUrl;
+
+  console.log("publishStore: "+JSON.stringify(config.publishStore));
+
+  // File Store types and options come from JSON config file.
+  stores.publish = setupStore( config.publishStore );
 
   async.parallel([
     function( asyncCallback ) {

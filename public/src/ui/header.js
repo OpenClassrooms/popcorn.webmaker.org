@@ -209,6 +209,7 @@ define([ "WebmakerUI", "localized", "dialog/dialog", "util/lang", "l10n!/layouts
       dirty: function() {
         togglePreviewButton( false );
         toggleSaveButton( butter.cornfield.authenticated() );
+        toggleProjectNameListeners( butter.cornfield.authenticated() );
       },
       clean: function() {
         togglePreviewButton( true );
