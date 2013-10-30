@@ -106,7 +106,7 @@ define([
   "popcorn.HTMLSoundCloudAudioElement",
   "popcorn.HTMLVimeoVideoElement",
   "popcorn.HTMLYouTubeVideoElement",
-  "popcorn.HTMLJWPlayerVideoElement" 
+  "popcorn.HTMLJWPlayerVideoElement"
 ], function() {
   return {};
 });
