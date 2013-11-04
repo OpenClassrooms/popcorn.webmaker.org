@@ -5,7 +5,7 @@ var utils = require( "../../lib/utilities" ),
 
 module.exports = function( Project ) {
   return function( req, res, next ) {
-    makeClient.id( res.locals.project.makeid ).then(function( err, make ) {
+    /*makeClient.id( res.locals.project.makeid ).then(function( err, make ) {
       var remixId;
       if ( err ) {
         return res.json( 500, { error: err } );
@@ -55,6 +55,7 @@ module.exports = function( Project ) {
       }
 
       res.json( req.projectJSON );
-    });
+    });*/
+    res.json( req.projectJSON );
   };
 };

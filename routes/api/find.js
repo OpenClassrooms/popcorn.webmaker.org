@@ -14,5 +14,8 @@ module.exports = function( req, res, next ) {
   projectJSON.background = res.locals.project.background;
 
   req.projectJSON = projectJSON;
+
+  console.log("Project JSON to find: "+JSON.stringify(projectJSON));
+
   next();
 };

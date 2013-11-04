@@ -19,6 +19,7 @@ var express = require('express'),
     middleware,
     APP_HOSTNAME = config.hostname,
     WWW_ROOT =  __dirname + '/public',
+    WWW_PUBLISHED =  __dirname + '/published',
     i18n = require( 'webmaker-i18n' ),
     emulate_s3 = config.S3_EMULATION || !config.S3_KEY;
 
@@ -111,7 +112,8 @@ app.configure( function() {
       }
     }))
     .use( express.static( tmpDir, JSON.parse( JSON.stringify( config.staticMiddleware ) ) ) )
-    .use( express.static( WWW_ROOT, JSON.parse( JSON.stringify( config.staticMiddleware ) ) ) );
+    .use( express.static( WWW_ROOT, JSON.parse( JSON.stringify( config.staticMiddleware ) ) ) )
+    .use( express.static( WWW_PUBLISHED, JSON.parse( JSON.stringify( config.staticMiddleware ) ) ) );
 
   // Setup locales with i18n
   app.use( i18n.middleware({
@@ -251,7 +253,6 @@ app.get( '/layouts/controls.html', routes.path( '/layouts/controls.html' ) );
 app.get( '/layouts/media-instance.html', routes.path( '/layouts/media-instance.html' ) );
 app.get( '/layouts/chapter-editor.html', routes.path( '/layouts/chapter-editor.html' ) );
 app.get( '/layouts/project-editor.html', routes.path( '/layouts/project-editor.html' ) );
-app.get( '/layouts/project-editor2.html', routes.path( '/layouts/project-editor2.html' ) );
 app.get( '/layouts/editor-area.html', routes.path( '/layouts/editor-area.html' ) );
 app.get( '/layouts/plugin-list-editor.html', routes.path( '/layouts/plugin-list-editor.html' ) );
 app.get( '/layouts/sequencer-editor.html', routes.path( '/layouts/sequencer-editor.html' ) );

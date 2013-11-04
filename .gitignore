@@ -15,5 +15,5 @@
 /dist/
 /local.json
 /node_modules/
-/user_published/
+/published/
 bower_components/

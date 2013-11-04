@@ -92,9 +92,9 @@ define( [ "core/eventmanager", "./toggler",
       });
     };
 
-    var make = new Make({
+    /*var make = new Make({
       apiURL: config.make_endpoint
-    });
+    });*/
 
     function loadTutorials() {
       var tutorialUrl;
@@ -105,7 +105,7 @@ define( [ "core/eventmanager", "./toggler",
         tutorialUrl = butter.project.remixedFromUrl;
       }
 
-      make.id( butter.project.makeid ).then( function( err, results ) {
+      /*make.id( butter.project.makeid ).then( function( err, results ) {
 
         var urls = [],
             tutorials = [],
@@ -152,7 +152,7 @@ define( [ "core/eventmanager", "./toggler",
         }
 
         addNext( urls.pop() );
-      });
+      });*/
     }
 
     this.setEditor = function( editorAreaDOMRoot ) {

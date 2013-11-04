@@ -1,16 +1,15 @@
 {
+	"USER_BAR": "http://localhost:8888",
 	"MAKE_ENDPOINT": "http://localhost:8888",
 	"USER_SUBDOMAIN": "http://localhost:8888",
+	"DEFAULT_USER_EMAIL": "anyuser@anyuser.com",
 	"publishStore": {
 	  "type": "local",
 	  "options": {
 	    "hostname": "http://localhost:8888",
-	    "root": "./generated",
-	    "namePrefix": "view",
+	    "root": "./published",
+	    "namePrefix": "players",
 	    "nameSuffix": ".html"
 	  }
-	},
-  "staticMiddleware": {
-    "maxAge": "0"
-  }
+	}
 }

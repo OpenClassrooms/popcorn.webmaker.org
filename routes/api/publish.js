@@ -19,7 +19,7 @@ module.exports = function( req, res ) {
 function setupStore( storeConfig ) {
   var store = filestore.create( storeConfig.type, storeConfig.options );
   if ( store.requiresFileSystem ) {
-    console.log("store.requiresFileSystem");
+    console.log("setupStore store.root: "+store.root)
     app.use( express.static( store.root, JSON.parse( JSON.stringify( config.staticMiddleware ) ) ) );
   }
   return store;
@@ -50,21 +50,30 @@ function setupStore( storeConfig ) {
         thumbnail: res.locals.project.thumbnail,
         background: res.locals.project.background
       }, function( err, html ) {
-        var sanitized = sanitizer.compressHTMLEntities( html );
+        var sanitized = sanitizer.compressHTMLEntities( html ),
+          embedPath = utilities.embedPath( req.session.username, res.locals.project.id );
 
-        s3.put( utilities.embedPath( req.session.username, res.locals.project.id ), {
-          "x-amz-acl": "public-read",
-          "Content-Length": Buffer.byteLength( sanitized, "utf8" ),
-          "Content-Type": "text/html; charset=UTF-8"
-        }).on( "error",
-          asyncCallback
-        ).on( "response", function( s3res ) {
-          if ( s3res.statusCode !== 200 ) {
-            return asyncCallback( "S3.writeEmbed returned HTTP " + s3res.statusCode );
-          }
+          console.log(embedPath);
+          console.log(config.publishStore.type);
 
-          asyncCallback();
-        }).end( sanitized );
+        if( config.publishStore.type == "local" ) {
+          stores.publish.write( embedPath, sanitized, asyncCallback );
+        }
+        else if( config.publishStore.type == "s3" ) {
+          s3.put( embedPath, {
+            "x-amz-acl": "public-read",
+            "Content-Length": Buffer.byteLength( sanitized, "utf8" ),
+            "Content-Type": "text/html; charset=UTF-8"
+          }).on( "error",
+            asyncCallback
+          ).on( "response", function( s3res ) {
+            if ( s3res.statusCode !== 200 ) {
+              return asyncCallback( "S3.writeEmbed returned HTTP " + s3res.statusCode );
+            }
+
+            asyncCallback();
+          }).end( sanitized );
+        }
       });
     },
     function( asyncCallback ) {
@@ -78,97 +87,137 @@ function setupStore( storeConfig ) {
          projectUrl: projectUrl,
          makeID: res.locals.project.makeid
        }, function( err, html ) {
-        var sanitized = sanitizer.compressHTMLEntities( html );
+        var sanitized = sanitizer.compressHTMLEntities( html ),
+          embedShellPath = utilities.embedShellPath( req.session.username, res.locals.project.id );
 
-        s3.put( utilities.embedShellPath( req.session.username, res.locals.project.id ), {
-          "x-amz-acl": "public-read",
-          "Content-Length": Buffer.byteLength( sanitized, "utf8" ),
-          "Content-Type": "text/html; charset=UTF-8"
-        }).on( "error",
-          asyncCallback
-        ).on( "response", function( s3res ) {
-          if ( s3res.statusCode !== 200 ) {
-            return asyncCallback( "S3.writeEmbedShell returned HTTP " + s3res.statusCode );
-          }
+          console.log(embedShellPath);
 
-          asyncCallback();
-        }).end( sanitized );
+        if( config.publishStore.type == "local" ) {
+          stores.publish.write( embedShellPath, sanitized, asyncCallback );
+        }
+        else if( config.publishStore.type == "s3" ) {
+          s3.put( embedShellPath, {
+            "x-amz-acl": "public-read",
+            "Content-Length": Buffer.byteLength( sanitized, "utf8" ),
+            "Content-Type": "text/html; charset=UTF-8"
+          }).on( "error",
+            asyncCallback
+          ).on( "response", function( s3res ) {
+            if ( s3res.statusCode !== 200 ) {
+              return asyncCallback( "S3.writeEmbedShell returned HTTP " + s3res.statusCode );
+            }
+
+            asyncCallback();
+          }).end( sanitized );          
+        }
       });
     },
     function( asyncCallback ) {
       res.render( "redirect.html", {
         target: projectUrl + "/edit"
       }, function( err, html ) {
-        s3.put( utilities.embedPath( req.session.username, res.locals.project.id ) + "/edit", {
-          "x-amz-acl": "public-read",
-          "Content-Length": Buffer.byteLength( html, "utf8" ),
-          "Content-Type": "text/html; charset=UTF-8"
-        }).on( "error",
-          asyncCallback
-        ).on( "response", function( s3res ) {
-          if ( s3res.statusCode !== 200 ) {
-            return asyncCallback( "S3.writeEmbed/edit redirect returned HTTP " + s3res.statusCode );
-          }
+        var sanitized = sanitizer.compressHTMLEntities( html ),
+          path = utilities.embedPath( req.session.username, res.locals.project.id ) + "/edit"
+        
+        if( config.publishStore.type == "local" ) {
+          stores.publish.write( path, sanitized, asyncCallback );
+        }
+        else if( config.publishStore.type == "s3" ) {
+          s3.put( path, {
+            "x-amz-acl": "public-read",
+            "Content-Length": Buffer.byteLength( html, "utf8" ),
+            "Content-Type": "text/html; charset=UTF-8"
+          }).on( "error",
+            asyncCallback
+          ).on( "response", function( s3res ) {
+            if ( s3res.statusCode !== 200 ) {
+              return asyncCallback( "S3.writeEmbed/edit redirect returned HTTP " + s3res.statusCode );
+            }
 
-          asyncCallback();
-        }).end( html );
+            asyncCallback();
+          }).end( html );
+        }
       });
     },
     function( asyncCallback ) {
       res.render( "redirect.html", {
         target: projectUrl + "/remix"
       }, function( err, html ) {
-        s3.put( utilities.embedPath( req.session.username, res.locals.project.id ) + "/remix", {
-          "x-amz-acl": "public-read",
-          "Content-Length": Buffer.byteLength( html, "utf8" ),
-          "Content-Type": "text/html; charset=UTF-8"
-        }).on( "error",
-          asyncCallback
-        ).on( "response", function( s3res ) {
-          if ( s3res.statusCode !== 200 ) {
-            return asyncCallback( "S3.writeEmbed/remix redirect returned HTTP " + s3res.statusCode );
-          }
+        var sanitized = sanitizer.compressHTMLEntities( html ),
+          path = utilities.embedPath( req.session.username, res.locals.project.id ) + "/remix";
 
-          asyncCallback();
-        }).end( html );
+        if( config.publishStore.type == "local" ) {
+          stores.publish.write( path, sanitized, asyncCallback );
+        }
+        else if( config.publishStore.type == "s3" ) {
+          s3.put( path, {
+            "x-amz-acl": "public-read",
+            "Content-Length": Buffer.byteLength( html, "utf8" ),
+            "Content-Type": "text/html; charset=UTF-8"
+          }).on( "error",
+            asyncCallback
+          ).on( "response", function( s3res ) {
+            if ( s3res.statusCode !== 200 ) {
+              return asyncCallback( "S3.writeEmbed/remix redirect returned HTTP " + s3res.statusCode );
+            }
+
+            asyncCallback();
+          }).end( html );
+        }
       });
     },
     function( asyncCallback ) {
       res.render( "redirect.html", {
         target: projectUrl + "/edit"
       }, function( err, html ) {
-        s3.put( utilities.embedShellPath( req.session.username, res.locals.project.id ) + "/edit", {
-          "x-amz-acl": "public-read",
-          "Content-Length": Buffer.byteLength( html, "utf8" ),
-          "Content-Type": "text/html; charset=UTF-8"
-        }).on( "error",
-          asyncCallback
-        ).on( "response", function( s3res ) {
-          if ( s3res.statusCode !== 200 ) {
-            return asyncCallback( "S3.writeEmbed/edit redirect returned HTTP " + s3res.statusCode );
-          }
+        var sanitized = sanitizer.compressHTMLEntities( html ),
+          path = utilities.embedShellPath( req.session.username, res.locals.project.id ) + "/edit";
 
-          asyncCallback();
-        }).end( html );
+        if( config.publishStore.type == "local" ) {
+          stores.publish.write( path, sanitized, asyncCallback );
+        }
+        else if( config.publishStore.type == "s3" ) {
+          s3.put( path, {
+            "x-amz-acl": "public-read",
+            "Content-Length": Buffer.byteLength( html, "utf8" ),
+            "Content-Type": "text/html; charset=UTF-8"
+          }).on( "error",
+            asyncCallback
+          ).on( "response", function( s3res ) {
+            if ( s3res.statusCode !== 200 ) {
+              return asyncCallback( "S3.writeEmbed/edit redirect returned HTTP " + s3res.statusCode );
+            }
+
+            asyncCallback();
+          }).end( html );
+        }
       });
     },
     function( asyncCallback ) {
       res.render( "redirect.html", {
         target: projectUrl + "/remix"
       }, function( err, html ) {
-        s3.put( utilities.embedShellPath( req.session.username, res.locals.project.id ) + "/remix", {
-          "x-amz-acl": "public-read",
-          "Content-Length": Buffer.byteLength( html, "utf8" ),
-          "Content-Type": "text/html; charset=UTF-8"
-        }).on( "error",
-          asyncCallback
-        ).on( "response", function( s3res ) {
-          if ( s3res.statusCode !== 200 ) {
-            return asyncCallback( "S3.writeEmbed/remix redirect returned HTTP " + s3res.statusCode );
-          }
+        var sanitized = sanitizer.compressHTMLEntities( html ),
+          path = utilities.embedShellPath( req.session.username, res.locals.project.id ) + "/remix";
 
-          asyncCallback();
-        }).end( html );
+        if( config.publishStore.type == "local" ) {
+          stores.publish.write( path, sanitized, asyncCallback );
+        }
+        else if( config.publishStore.type == "s3" ) {
+          s3.put( path, {
+            "x-amz-acl": "public-read",
+            "Content-Length": Buffer.byteLength( html, "utf8" ),
+            "Content-Type": "text/html; charset=UTF-8"
+          }).on( "error",
+            asyncCallback
+          ).on( "response", function( s3res ) {
+            if ( s3res.statusCode !== 200 ) {
+              return asyncCallback( "S3.writeEmbed/remix redirect returned HTTP " + s3res.statusCode );
+            }
+
+            asyncCallback();
+          }).end( html );
+        }
       });
     },
   ], function( err, results ) {

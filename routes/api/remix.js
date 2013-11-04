@@ -12,5 +12,7 @@ module.exports = function( req, res, next ) {
   req.projectJSON = projectJSON;
   projectJSON.isRemix = true;
 
+  console.log("Project JSON to remix: "+JSON.stringify(projectJSON));
+
   next();
 };
