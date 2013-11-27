@@ -101,7 +101,7 @@ p { line-height: 1.5em; }
 
 .dd3-content {
   display: block;
-  height: inherit;
+  min-height: 52px;
   margin: 5px 0;
   padding: 5px 92px 5px 30px;
   color: #333;
@@ -124,7 +124,8 @@ p { line-height: 1.5em; }
 
 .dd3-handle { position: absolute; margin: 0; left: 0; top: 0; cursor: pointer;
   width: 20px;
-  height: 32px;
+  height: 52px;
+  line-height: 38px;
   text-indent: 100%; white-space: nowrap; overflow: hidden;
     border: 1px solid #aaa;
     background: #ddd;
@@ -144,7 +145,8 @@ p { line-height: 1.5em; }
   top: 0;
   cursor: pointer;
   width: 20px;
-  height: 30px;
+  height: 50px;
+  line-height: 40px;
   text-indent: 100%;
   white-space: nowrap;
   overflow: hidden;
@@ -164,7 +166,6 @@ p { line-height: 1.5em; }
   position: absolute;
   display: block;
   width: 70px;
-  height: 30px;
   float: right;
   border-top: 0;
   background: transparent;
@@ -179,12 +180,12 @@ p { line-height: 1.5em; }
 
 
 .toc-item-time-end {
-  right: 0px;
-
+  right: 21px;
+  top: 25px;
 }
 .toc-item-time input {
   margin: 0;
-  height: 32px!important;
+  height: 26px!important;
   width: 70px!important;
   background: #FFF;
   color: #555555;
@@ -193,10 +194,7 @@ p { line-height: 1.5em; }
   font-size: 10px;
   font-family: menlo, monospace;
 }
-.toc-item-time input:focus {
-  -webkit-touch-callout: text;
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  user-select: text;
+
+.toc-item-time-end input {
+  height: 27px!important;
 }

@@ -677,7 +677,7 @@ function init() {
               clipsContainer.appendChild( clipCont );
             }
 
-            attributionContainer.appendChild( clipsContainer );
+            //attributionContainer.appendChild( clipsContainer );
           }
 
           if ( imageEvents.length ) {
