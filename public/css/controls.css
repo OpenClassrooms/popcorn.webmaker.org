@@ -68,8 +68,8 @@
   margin-top: 0;
   height: 41px;
   position: absolute;
-  left: 185px;
-  right: 215px;
+  left: 146px;
+  right: 214px;
   padding-right: 20px;
   border-right: 1px solid #d5d6d5;
 }
@@ -78,20 +78,77 @@
   padding-top: 0;
   height: 41px;
   position: absolute;
-  width: 108px;
-  right: 45px;
+  width: 74px;
+  right: 0;
   background: #f2f2f2;
-  border-right: 1px solid #d5d6d5;
   border-left: 1px solid #d5d6d5;
+}
+
+#controls-bars {
+  width: inherit;
+  height: inherit;
+}
+
+#controls-tocbar {
+  position: absolute;
+  background: #fff;
+  height: 26px;
+  left: 0;
+  right: 0;
+  top: 7px;
+  margin-right: 12px;
+  box-shadow: none;
+  cursor: pointer;
+  border-radius: 0px;
+}
+
+.controls-tocbar-item {
+}
+
+.controls-tocbar-item-top {
+  background: rgba(0,0,0);
+  height: 2px;
+  top: -6px;
+  opacity: 0.3;
+}
+
+.controls-tocbar-item-middle {
+  background: rgba(0,0,0);
+  height: 2px;
+  top: -3px;
+  opacity: 0.3;
+}
+
+.controls-tocbar-item-bottom {
+  background: rgb(0,0,0);
+  height: 26px;
+  top: 0px;
+}
+
+
+.even {
+  opacity: 0.05;
+}
+
+.odd {
+  opacity: 0.1;
+}
+
+.current-tocbar-item {
+  opacity: 0.15;
+}
+
+.playing-tocbar-item {  
+  background: rgb(0,0,0);
+  opacity: 0.2;
 }
 
 #controls-timebar {
   position: absolute;
-  background: #e4e4e4;
-  height: 15px;
+  height: 26px;
   left: 0;
   right: 0;
-  top: 12px;
+  top: 7px;
   margin-right: 12px;
   border-radius: 0;
   box-shadow: none;
@@ -100,7 +157,7 @@
 
 #controls-progressbar {
   height: 100%;
-  background: #1eb771;
+  background: rgba(233, 83, 37, .6);
   position: absolute;
   border-radius: 0;
 }
@@ -122,7 +179,7 @@
 }
 
 #controls-currenttime {
-  color: #1eb771;
+  color: #e95325;
   position: relative;
   text-align: left;
   left: auto;
@@ -141,21 +198,33 @@
 }
 
 
+/* Navigation */
+
+#controls-nav-container {
+  position: absolute;
+  right: 138px;
+  width: 76px;
+  border-right: 1px solid #d5d6d5;
+  height: 41px;
+}
+
+
+
 /* Volume */
 
 #controls-volume-container {
   position: absolute;
-  right: 165px;
+  right: 84px;
   width: 38px;
 }
 
 #controls-volume {
   position: absolute;
   background: #e4e4e4;
-  height: 15px;
+  height: 26px;
   left: 7px;
   right: 0;
-  top: 12px;
+  top: 7px;
   border-radius: 0;
   box-shadow: none;
   cursor: pointer;
@@ -163,7 +232,7 @@
 
 #controls-volume-progressbar {
   height: 100%;
-  background: #1eb771;
+  background: rgba(233, 83, 37, .7);
   position: absolute;
   border-radius: 0;
 }
@@ -192,7 +261,7 @@
 #controls-play {
   width: 28px;
   height: 28px;
-  background: #1eb771 url( "../resources/controls/controls_icon_playPause.png" ) no-repeat;
+  background: rgba(233, 83, 37, .6) url( "../resources/controls/controls_icon_playPause.png" ) no-repeat;
   padding: 0;
   border-radius: 3px;
   margin-top: 7px;
@@ -201,7 +270,41 @@
 }
 
 #controls-play:hover {
-  background-color: #60c7a5;
+  background-color: rgba(233, 83, 37, .9);
+}
+
+#controls-prev,
+#controls-next {
+  width: 28px;
+  height: 28px;
+  background-color: rgba(233, 83, 37, .6);
+  padding: 0;
+  border-radius: 3px;
+  margin-top: 6px;
+  margin-left: 9px;
+  cursor: pointer;
+  float: left;
+}
+
+#controls-prev {
+  left: 0px;
+  background-image: url("../resources/controls/btn-previous.png" );
+  background-size: 50%;
+  background-repeat: no-repeat;
+  background-position: 8px;
+}
+
+#controls-next {
+  left: 30px;
+  background-image: url("../resources/controls/btn-next.png" );
+  background-size: 50%;
+  background-repeat: no-repeat;
+  background-position: 8px;
+}
+
+#controls-prev:hover,
+#controls-next:hover {
+  background-color: rgba(233, 83, 37, .9);
 }
 
 #controls-mute {
@@ -236,30 +339,38 @@
   background-position: -384px -24px;
 }
 
-.controls-right div {
-  background: #9EAFBA url( "../resources/controls/controls_icons.png" ) no-repeat;
-  margin-top: 6px;
-  margin-left: 6px;
+#controls-share,
+#controls-fullscreen {
   width: 28px;
   height: 28px;
+  background: rgba(0,0,0,0.25) url( "../resources/controls/controls_icons.png" );
+  padding: 0;
   border-radius: 3px;
-  float: left;
+  margin-top: 6px;
+  margin-left: 9px;
   cursor: pointer;
+  float: left;
+  position: absolute;
 }
 
 .controls-right div:hover {
-  background-color: #1eb771;
+  background-color: rgba(233, 83, 37, .6)!important;
 }
 
 #controls-share {
-  background-position: -27px -2px;
+  left: 0px;
+  background: rgba(0,0,0,0.25) url("../resources/controls/btn-share.png" );
+  background-size: 50%;
+  background-repeat: no-repeat;
+  background-position: 6px 8px;
 }
 
 #controls-remix {
   background-position: -61px -2px;
 }
 
-#controls-fullscreen {
+#controls-fullscreen {  
+  left: 30px;
   background-position: 7px -2px;
 }
 

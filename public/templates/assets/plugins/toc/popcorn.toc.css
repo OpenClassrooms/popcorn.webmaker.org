@@ -1,16 +1,16 @@
-.popcorn-text {
+.popcorn-toc {
   color: #FFF;
   font-size: 22.5em;
 }
 
-.popcorn-text.off {
+.popcorn-toc.off {
   visibility: hidden;
 }
 
-.text-inner-div a {
+.toc-inner-div a {
   text-decoration: none;
 }
-.text-inner-div a:after {
+.toc-inner-div a:after {
   font-family: FontAwesome;
   font-weight: normal;
   font-style: normal;
@@ -21,10 +21,10 @@
   vertical-align: middle;
   content: "\f064"; /* icon-share-alt */
 }
-.text-inner-div a:hover {
+.toc-inner-div a:hover {
   text-decoration: underline;
 }
-.text-inner-div a:hover:after {
+.toc-inner-div a:hover:after {
   opacity: 1;
 }
 
@@ -40,13 +40,13 @@
   text-align: left;
 }
 
-.text-custom {
+.toc-custom {
   display: inline-block;
   max-height: 100%;
   max-width: 100%;
 }
 
-.text-custom > div > span {
+.toc-custom > div > span {
   display: block;
   width: 100%;
   line-height: 1;

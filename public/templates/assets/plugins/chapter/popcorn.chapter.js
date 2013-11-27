@@ -34,25 +34,6 @@
           label: "Text",
           "default": "Popcorn Maker"
         },
-        linkUrl: {
-          elem: "input",
-          type: "text",
-          label: "Link URL"
-        },
-        position: {
-          elem: "select",
-          options: [ "Custom", "Middle", "Bottom", "Top" ],
-          values: [ "custom", "middle", "bottom", "top" ],
-          label: "Text Position",
-          "default": "custom"
-        },
-        alignment: {
-          elem: "select",
-          options: [ "Center", "Left", "Right" ],
-          values: [ "center", "left", "right" ],
-          label: "Text Alignment",
-          "default": "left"
-        },
         start: {
           elem: "input",
           type: "text",
@@ -66,103 +47,12 @@
           label: "Out",
           group: "advanced",
           "units": "seconds"
-        },
-        transition: {
-          elem: "select",
-          options: [ "None", "Pop", "Fade", "Slide Up", "Slide Down" ],
-          values: [ "popcorn-none", "popcorn-pop", "popcorn-fade", "popcorn-slide-up", "popcorn-slide-down" ],
-          label: "Transition",
-          "default": "popcorn-fade"
-        },
-        fontFamily: {
-          elem: "select",
-          label: "Font",
-          styleClass: "",
-          googleFonts: true,
-          group: "advanced",
-          "default": "Merriweather"
-        },
-        fontSize: {
-          elem: "input",
-          type: "number",
-          label: "Font Size",
-          "default": 10,
-          units: "%",
-          group: "advanced"
-        },
-        fontColor: {
-          elem: "input",
-          type: "color",
-          label: "Font colour",
-          "default": DEFAULT_FONT_COLOR,
-          group: "advanced"
-        },
-        shadow: {
-          elem: "input",
-          type: "checkbox",
-          label: "Shadow",
-          "default": false,
-          group: "advanced"
-        },
-        shadowColor: {
-          elem: "input",
-          type: "color",
-          label: "Shadow colour",
-          "default": DEFAULT_SHADOW_COLOR,
-          group: "advanced"
-        },
-        background: {
-          elem: "input",
-          type: "checkbox",
-          label: "Background",
-          "default": false,
-          group: "advanced"
-        },
-        backgroundColor: {
-          elem: "input",
-          type: "color",
-          label: "Background color",
-          "default": DEFAULT_BACKGROUND_COLOR,
-          group: "advanced"
-        },
-        fontDecorations: {
-          elem: "checkbox-group",
-          labels: { bold: "Bold", italics: "Italics" },
-          "default": { bold: false, italics: false },
-          group: "advanced"
-        },
-        left: {
-          elem: "input",
-          type: "number",
-          label: "Left",
-          units: "%",
-          "default": 25,
-          hidden: true
-        },
-        top: {
-          elem: "input",
-          type: "number",
-          label: "Top",
-          units: "%",
-          "default": 0,
-          hidden: true
-        },
-        width: {
-          elem: "input",
-          type: "number",
-          units: "%",
-          label: "Width",
-          "default": 50,
-          hidden: true
-        },
-        zindex: {
-          hidden: true
         }
       }
     },
 
     _setup: function( options ) {
-      var target = Popcorn.dom.find( options.target ),
+/*      var target = Popcorn.dom.find( options.target ),
           text = newlineToBreak( options.text ),
           container = options._container = document.createElement( "div" ),
           innerContainer = document.createElement( "div" ),
@@ -281,7 +171,7 @@
         }
       };
       fontSheet.href = "//fonts.googleapis.com/css?family=" + options.fontFamily.replace( /\s/g, "+" ) + ":400,700";
-
+*/
       options.toString = function() {
         // use the default option if it doesn't exist
         return options.text || options._natives.manifest.options.text[ "default" ];

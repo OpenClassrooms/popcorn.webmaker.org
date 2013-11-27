@@ -15,6 +15,8 @@ function init() {
   // we don't (e.g., when we open the share dialog).
   var hideInfoDiv = false;
 
+  var tocItems = [];
+
   /**
    * embed.js is a separate, top-level entry point into the requirejs
    * structure of src/.  We use it in order to cherry-pick modules from
@@ -24,15 +26,25 @@ function init() {
    * target for more info.
    */
 
-  function $( id ) {
+  function selectId( id ) {
     if ( typeof id !== "string" ) {
       return id;
     }
     return document.querySelector( id );
   }
 
+  function reconstituteHTML( s ) {
+    return s.replace( /&#34;/g, '"' )
+            .replace( /&#39;/g, "'" )
+            .replace( /&quot;/g, '"' )
+            .replace( /&apos;/g, "'" )
+            .replace( /&lt;/g, '<' )
+            .replace( /&gt;/g, '>' )
+            .replace( /&amp;/g, '&' );
+  }
+
   function show( elem ) {
-    elem = $( elem );
+    elem = selectId( elem );
     if ( !elem ) {
       return;
     }
@@ -111,7 +123,7 @@ function init() {
   }
 
   function hide( elem ) {
-    elem = $( elem );
+    elem = selectId( elem );
     if ( !elem ) {
       return;
     }
@@ -131,7 +143,7 @@ function init() {
   }
 
   function remixClick() {
-    window.open( $( "#remix-post" ).href, "_blank" );
+    window.open( selectId( "#remix-post" ).href, "_blank" );
   }
 
   function fullscreenClick() {
@@ -147,9 +159,9 @@ function init() {
       popcorn.play( config.start );
     }
 
-    $( "#replay-post" ).addEventListener( "click", replay, false );
-    $( "#replay-share" ).addEventListener( "click", replay, false );
-    $( "#share-post" ).addEventListener( "click", function() {
+    selectId( "#replay-post" ).addEventListener( "click", replay, false );
+    selectId( "#replay-share" ).addEventListener( "click", replay, false );
+    selectId( "#share-post" ).addEventListener( "click", function() {
       shareClick( popcorn );
     }, false );
   }
@@ -157,7 +169,7 @@ function init() {
   function buildIFrameHTML() {
     var src = window.location,
       // Sizes are strings: "200x400"
-      shareSize = $( ".size-options .current .dimensions" ).textContent.split( "x" ),
+      shareSize = selectId( ".size-options .current .dimensions" ).textContent.split( "x" ),
       width = shareSize[ 0 ],
       height = shareSize[ 1 ];
 
@@ -182,7 +194,7 @@ function init() {
 
   // indicate which state the post roll is in
   function setStateClass( state ) {
-    var el = $( "#post-roll-container" );
+    var el = selectId( "#post-roll-container" );
 
     if ( el.classList.contains( state ) ) {
       return;
@@ -195,7 +207,7 @@ function init() {
 
   // clear the state class indicator for the post roll container
   function clearStateClass( el ) {
-    el = el || $( "#post-roll-container" );
+    el = el || selectId( "#post-roll-container" );
 
     for ( var i = 0; i < stateClasses.length; i++ ) {
       el.classList.remove( stateClasses[ i ] );
@@ -206,7 +218,7 @@ function init() {
     var sizeOptions = document.querySelectorAll( ".option" ),
         i, l, messages;
 
-    $( "#share-close" ).addEventListener( "click", function() {
+    selectId( "#share-close" ).addEventListener( "click", function() {
       hide( "#share-container" );
 
       // If the video is done, go back to the postroll
@@ -217,9 +229,9 @@ function init() {
 
     function sizeOptionFn( e ) {
       e.preventDefault();
-      $( ".size-options .current" ).classList.remove( "current" );
+      selectId( ".size-options .current" ).classList.remove( "current" );
       this.classList.add( "current" );
-      $( "#share-iframe" ).value = buildIFrameHTML();
+      selectId( "#share-iframe" ).value = buildIFrameHTML();
     }
 
     for ( i = 0, l = sizeOptions.length; i < l; i++ ) {
@@ -291,16 +303,16 @@ function init() {
     popcorn.on( "trackstart", function( e ) {
       window.parent.postMessage({
         plugin: e.plugin,
-        type: e.type,
-        options: buildOptions( e, e._natives.manifest.options )
+        type: e.type/*,
+        options: buildOptions( e, e._natives.manifest.options )*/
       }, "*" );
     });
 
     popcorn.on( "trackend", function( e ) {
       window.parent.postMessage({
         plugin: e.plugin,
-        type: e.type,
-        options: buildOptions( e, e._natives.manifest.options )
+        type: e.type/*,
+        options: buildOptions( e, e._natives.manifest.options )*/
       }, "*" );
     });
 
@@ -452,14 +464,14 @@ function init() {
             setupEventHandlers( popcorn, config );
 
             // Wrap textboxes so they click-to-highlight and are readonly
-            TextboxWrapper.applyTo( $( "#share-url" ), { readOnly: true } );
-            TextboxWrapper.applyTo( $( "#share-iframe" ), { readOnly: true } );
+            TextboxWrapper.applyTo( selectId( "#share-url" ), { readOnly: true } );
+            TextboxWrapper.applyTo( selectId( "#share-iframe" ), { readOnly: true } );
 
             // Write out the iframe HTML necessary to embed this
-            $( "#share-iframe" ).value = buildIFrameHTML();
+            selectId( "#share-iframe" ).value = buildIFrameHTML();
 
             // Get the page's canonical URL and put in share URL
-            $( "#share-url" ).value = getCanonicalURL();
+            selectId( "#share-url" ).value = getCanonicalURL();
           }
 
           var sequencerEvents = popcorn.data.trackEvents.where({ type: "sequencer" }),
@@ -467,22 +479,179 @@ function init() {
               mapEvents = popcorn.data.trackEvents.where({ type: "googlemap" }),
               attributionContainer = document.querySelector( ".attribution-details" ),
               attributionMedia = document.querySelector( ".attribution-media" ),
-              toggler = $( ".attribution-logo" ),
-              closeBtn = $( ".attribution-close" ),
-              container = $( ".attribution-info" );
+              attributionContent = selectId( ".attribution-content" ),
+              toggler = selectId( ".attribution-logo" ),
+              closeBtn = selectId( ".attribution-close" ),
+              container = selectId( ".attribution-info" ),
+              jsonToc,
+              htmlToc;
 
           // Backwards compat for old layout. Removes the null media that's shown there.
           if ( attributionMedia ) {
             attributionContainer.removeChild( attributionMedia );
           }
 
-          toggler.addEventListener( "click", function() {
+          // Table of contents settings
+
+          jsonToc = popcorn.data.running.toc ? popcorn.data.running.toc[0].jsonml : null;
+          htmlToc = jsonToc ? JsonML.toHTML( jsonToc ) : document.createElement("ol");
+
+          attributionContent.appendChild( htmlToc );
+
+    var tocLinks = htmlToc.querySelectorAll("a");
+
+    function updateCurrentTocItem() {
+      var currentLinks = htmlToc.querySelectorAll(".current-toc-item");
+      if( currentLinks ) {
+        $.each( currentLinks, function() {
+          this.classList.remove("current-toc-item");
+        });
+      }
+
+      var newLinks = [];
+      for (var j = 0; j < tocItems.length; j++) {
+        var item = tocItems[j],
+          currentTime = popcorn.currentTime();
+        if( currentTime >= item.start && currentTime < item.end ) {
+          item.link.classList.add("current-toc-item");
+          newLinks.push( item.link );
+        }
+      }
+    }
+
+    // Build toc items data list.
+    // Used to switch from one par to another. 
+    for( var i = 0; i < tocLinks.length; i++) {
+      var tocLink = tocLinks[ i ];
+      tocLink.innerHTML = reconstituteHTML( tocLink.innerHTML );
+
+      var end = tocLink.getAttribute('data-end'),
+        start = tocLink.getAttribute('data-start'),
+        level = tocLink.getAttribute('data-level'),
+        tocItem = {};
+
+      // Set data. Usefull to display tooltips of current chapter.
+      tocItem.end = parseFloat( end );
+      tocItem.start = parseFloat( start );
+      tocItem.level = parseFloat( level );
+      tocItem.link = tocLink;
+
+      tocItems.push(tocItem);
+
+      popcorn.cue( tocItem.start, updateCurrentTocItem);
+      
+      // Workaround to prevent player to pause in the end of item
+      popcorn.cue( tocItem.end, function() {
+        if( popcorn.paused() ) {
+          popcorn.play();
+        }
+      });
+
+      tocLink.onclick = function(e) {
+        e.preventDefault();
+        var start = e.target.getAttribute("data-start");
+        if( popcorn.paused() ) {
+          popcorn.pause( start );
+        }
+        else {
+          popcorn.play( start );
+        }
+      }
+    }
+
+    // Set as global var of the popcorn instance to get it in controls.js
+    popcorn.data.running.toc ? popcorn.data.running.toc[0].tocItems = tocItems : null;
+
+    // Build toc labels list.
+    // Used for tooltips in the player timeline.
+
+    var tocStarts = [];
+
+    var tocTooltips = [],
+      h1Count = 0;
+
+    $( htmlToc ).find("a[data-level='3']").each(function() {
+      tocStarts.push( this.getAttribute("data-start") );
+    });
+
+    function addTooltip( start, end, h1Count, titles ) {
+      var tocTooltip = {};
+      tocTooltip.start = parseFloat( start );
+      tocTooltip.end = parseFloat( end );
+      tocTooltip.h1Count = parseFloat( h1Count );
+      tocTooltip.titles = titles;
+      tocTooltip.tocBars = [];
+      tocTooltips.push( tocTooltip );
+    }
+
+    function onTocTogglerClick() {
+      container.classList.toggle( "attribution-on" );
+      videoContainer = document.querySelectorAll( ".container" )[ 0 ]
+      videoContainer.classList.toggle( "reduced-on" );
+    }
+
+    $( htmlToc ).find("[data-level='1']").each(function() {
+      var h1Chapter = this,
+        titles = [],
+        tocTooltip = {};
+
+      ++h1Count;
+
+      // If no further child, add a toc tooltip
+      if( $( h1Chapter ).parent().children().length == 1 ) {
+        titles.push( h1Chapter.innerHTML );
+        addTooltip( h1Chapter.getAttribute("data-start"),
+          h1Chapter.getAttribute("data-end"),
+          h1Count,
+          titles );
+      }
+
+      $( h1Chapter ).parent().find("[data-level='2']").each(function() {
+        var h2Chapter = this;
+
+        // If no further child, add a toc tooltip
+        if( $( h2Chapter ).parent().children().length == 1 ) {
+          titles.push( h2Chapter.innerHTML );
+          addTooltip( h2Chapter.getAttribute("data-start"),
+            h2Chapter.getAttribute("data-end"),
+            h1Count,
+            titles );          
+          titles = [];
+        }
+
+        $( h2Chapter ).parent().find("[data-level='3']").each(function() {
+          var h3Chapter = this;
+
+          titles.push( h1Chapter.innerHTML );
+          titles.push( h2Chapter.innerHTML );
+          titles.push( h3Chapter.innerHTML );
+
+          addTooltip( h3Chapter.getAttribute("data-start"),
+            h3Chapter.getAttribute("data-end"),
+            h1Count,
+            titles );
+
+          titles = [];
+        });
+      });
+    });
+
+    // Set as global var of the popcorn instance to get it in controls.js
+    popcorn.data.running.toc ? popcorn.data.running.toc[0].tocTooltips = tocTooltips : null;
+
+    // Update toc whenever receives the order to update it
+    popcorn.on("updateToc", updateCurrentTocItem);
+
+    toggler.addEventListener( "click", onTocTogglerClick, false );
+
+
+          /*toggler.addEventListener( "click", function() {
             container.classList.toggle( "attribution-on" );
           }, false );
 
           closeBtn.addEventListener( "click", function() {
             container.classList.toggle( "attribution-on" );
-          }, false );
+          }, false );*/
 
           if ( sequencerEvents.length ) {
             var clipsContainer = __defaultLayouts.querySelector( ".attribution-media" ).cloneNode( true ),

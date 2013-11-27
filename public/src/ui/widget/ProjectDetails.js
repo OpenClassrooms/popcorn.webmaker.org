@@ -187,7 +187,7 @@ define( [ "util/keys", "ui/widget/tooltip", "localized", "ui/widget/textbox" ],
           // so default it to something not as cool,
           // but still pretty cool.
           if ( !_butter.project.thumbnail ) {
-            _butter.project.thumbnail = location.protocol + "//" + location.host + "/resources/icons/fb-logo.png";
+            _butter.project.thumbnail = location.protocol + "//" + location.host + "/resources/icons/logo_openclassrooms_retina.png";
           }
 
           addThumbnail( _butter.project.thumbnail );

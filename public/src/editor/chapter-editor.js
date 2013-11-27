@@ -6,7 +6,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
           "l10n!/layouts/chapter-editor.html",
           "ui/widget/textbox", "ui/widget/tooltip",
           "util/lang", "util/keys", "util/time" ],
-  function( Localized, Editor, BaseEditor, LAYOUT_SRC, TextboxWrapper, ToolTip, LangUtils, KeyUtils, TimeUtils ) {
+  function( Localized, Editor, BaseEditor, LAYOUT_SRC, TextboxWrapper, ToolTip, LangUtils, KeysUtils, TimeUtils ) {
 
   Editor.register( "chapter-editor", LAYOUT_SRC, function( rootElement, butter ) {
 

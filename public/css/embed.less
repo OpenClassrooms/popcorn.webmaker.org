@@ -1,10 +1,10 @@
 @import "globals";
 @import "ui-states";
 
-@creditsLogoSize: 25px;
-@red: #CB3E21;
-@attributionZIndex: 4;
-@postRollZIndex: 3;
+@creditsLogoSize: 35px;
+@red: rgba(233, 83, 37, .9);
+@attributionZIndex: 3;
+@postRollZIndex: 4;
 @videoZIndex: 1;
 @thumbnailZIndex: 2;
 @thumbnailZIndexPreload: @thumbnailZIndex + 1000;
@@ -45,19 +45,43 @@ body {
   width: 100%;
   height: 100%;
   position: relative;
+  background-color: #000;
 }
 
-.container {
+/*.container {
   position: relative;
   width: 100%;
   height: 100%;
   z-index: @videoZIndex;
+}*/
+
+.container {
+  position: absolute;
+  display: block;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin-bottom: 40px;
+  width: 100%;
+  height: auto;
+  z-index: @videoZIndex;
 }
 
+.container.reduced-on {
+  width: 70%;
+}
+
+
 .video {
-  position: relative;
+  /*position: relative;
   width: 100%;
   padding-bottom: 56.25%;
+  height: 0;*/
+
+  position: relative;
+  padding-bottom: 56.25%;
+  width: 100%;
   height: 0;
 
   &.full-screen {
@@ -65,6 +89,11 @@ body {
     height: 100%;
   }
 }
+
+.video.reduced-on {  
+  padding-bottom: 56.25%;
+}
+
 
 .video > div video,
 .video > div iframe,
@@ -75,6 +104,11 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
+}
+
+.embed-overlay {
+  background: rgba( 255, 255, 255, 0.95 );
+  color: #676867;
 }
 
 #thumbnail-container {
@@ -140,13 +174,22 @@ body {
 */
 
 .attribution-info {
-  font-family: "Meta", "Open Sans", "Helvetica Neue", sans-serif;
+  /*font-family: "Meta", "Open Sans", "Helvetica Neue", sans-serif;
   z-index: @attributionZIndex - 3;
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 1%;
+  font-size: 14px;*/
+
+  font-family: "Helvetica Neue", sans-serif;
+  z-index: @attributionZIndex;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30%;
+  height: 100%;
   font-size: 14px;
 
   &.show {
@@ -160,16 +203,38 @@ body {
 }
 // Adjust font size for other sizes
 @media only screen and ( min-width: @medium ) {
+  .attribution-logo {
+    top: 8px;
+    right: 10px;
+    width: @creditsLogoSize - 10;
+    height: @creditsLogoSize - 10;
+    border-radius: @creditsLogoSize - 10;
+    background-position: -160px -2px!important;
+  }
   .attribution-info {
     font-size: 16px;
   }
 }
 @media only screen and ( min-width: @large ) {
+  .attribution-logo {
+    top: 12px;
+    right: 10px;
+    width: @creditsLogoSize - 10;
+    height: @creditsLogoSize - 10;
+    background-position: -160px -2px!important;
+  }
   .attribution-info {
     font-size: 21.325px;
   }
 }
 @media only screen and ( min-width: @xlarge ) {
+  .attribution-logo {
+    top: 16px;
+    right: 18px;
+    width: @creditsLogoSize;
+    height: @creditsLogoSize;
+    background-position: -124px 3px!important;
+  }
   .attribution-info {
     font-size: 28px;
   }
@@ -177,24 +242,20 @@ body {
 
 .attribution-logo {
   position: absolute;
-  top: 15px;
-  left: 15px;
-  width: @creditsLogoSize;
-  height: @creditsLogoSize;
-  border-radius: @creditsLogoSize;
   text-align: center;
-  background-color: @red;
+  background: @red url("../resources/controls/controls_icons.png" ) no-repeat;
+  /*background-image: url("../media/img/glyphiconshalflings-white.png");*/
+  background-position: -160px -2px;
   color: #FFF;
   z-index: 1;
   opacity: 0.5;
   cursor: pointer;
-  .transition( all 0.1s ease );
+  .transition( all 0.5s ease );
   &:before {
     position: relative;
     top: 3px;
     font-size: 30px;
     font-family: Georgia, serif;
-    content: '\0201c';
   }
   &:hover {
     opacity: 1;
@@ -203,6 +264,7 @@ body {
     }
   }
 }
+
 // "Credits"
 .attribution-text {
   position: absolute;
@@ -215,30 +277,57 @@ body {
 }
 
 @media only screen and ( min-width: @large ) {
-  .attribution-logo {
-    width: @creditsLogoSize + 5;
-    height: @creditsLogoSize + 5;
-    border-radius: @creditsLogoSize + 5;
-    &:before { font-size: 40px; }
-  }
   .attribution-text {
     left: @creditsLogoSize + 14;
     line-height: @creditsLogoSize + 5;
   }
 }
 
+.attribution-content {
+  background-color: #FFF;
+  ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0.8em;
+    border-bottom: 1px solid #d5d6d5;
+  }
+
+  ul li {
+    float: left;
+    width: 100%!important;
+    border-top: 1px solid #d5d6d5;
+    background-color: rgba( 0, 0, 0, 0.04 );
+    &:hover {
+      background-color: rgba( 255, 255, 255, 99.96 );
+    }
+  }
+
+  ul li a {
+    display: block;
+    font-size: 0.8em;
+    text-decoration: none;
+    padding: 1em 1.2em;
+  }
+
+  ul li a.current-toc-item {
+    font-weight: bold;
+    background: #FFF;
+  }
+
+}
+
 .attribution-details {
   position: absolute;
   top: 0;
-  left: 0;
   right: 0;
-  padding-left: 3.5em;
-  padding-top: 1em;
-  padding-bottom: 1em;
-  background: rgba( 255, 255, 255, 0.9 );
+  bottom: 42px;
+  width: 100%;
+  background: rgba( 255, 255, 255, 0.95 );
   color: black;
-  border-bottom: 1px solid rgba( 0, 0, 0, 0.2 );
-  overflow: hidden;
+  border-left: 1px solid #d5d6d5;
+  overflow: auto;
   .transition( opacity .1s ease );
 }
 
@@ -248,12 +337,13 @@ body {
   font-weight: 700;
 }
 .attribution-title {
-  font-size: 1.3em;
+  font-size: 1em;
   line-height: 1.6;
   max-width: 90%;
   overflow: hidden;
-  white-space: nowrap;
   text-overflow: ellipsis;
+  padding: 0.4em 0.8em;
+  margin-right: 40px;
 }
 .attribution-author {
   font-style: italic;
@@ -262,7 +352,6 @@ body {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-
 
 .attribution-media,
 .attribution-images,
@@ -425,7 +514,8 @@ body {
 
   .embed-logo {
     float: left;
-    background: url( "../resources/controls/postroll_logo.png" ) 0 0 no-repeat;
+    background: url( "../resources/icons/logo_openclassrooms_retina.png" ) 0 0 no-repeat;
+    background-size: 50%;
     width: 30%;
     background-size: 100%;
     max-width: 231px;
@@ -437,7 +527,7 @@ body {
 
   .embed-title {
     font-size: 32px;
-    font-weight: 700;
+    font-weight: 400;
     color: #676867;
     line-height: 1.4em;
     max-width: 90%;
@@ -528,8 +618,9 @@ body {
   position: absolute;
   top: 0;
   left: 0;
+  bottom: 43px;
   width: 100%;
-  height: 100%;
+  /*height: 100%;*/
   display: none;
 }
 
