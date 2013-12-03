@@ -111,7 +111,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
       }
       $(newTocItem).find( ".dd3-content" ).first().text( label );
 
-      if( seqTrackEvent!=undefined ) {
+      if( seqTrackEvent !== undefined ) {
         startBox = new TimeBox(
           $(newTocItem).find(".toc-item-time-start"),
           seqTrackEvent.popcornOptions.start
@@ -119,7 +119,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
         endBox = new TimeBox(
           $(newTocItem).find(".toc-item-time-end"),
           seqTrackEvent.popcornOptions.end
-        );        
+        );
       }
 
       _tocEditorDiv.classList.add("visible");
@@ -342,8 +342,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
           type: "chapter"
         });
 
-        _media.dispatch("newChapter", popcornOptions);
-
+        _media.dispatch("chapteradded", trackEvent);
 
         _butter.deselectAllTrackEvents();
         trackEvent.selected = true;
@@ -435,10 +434,6 @@ define([ "localized", "editor/editor", "editor/base-editor",
           levelTrack = _media.insertTrackAfter( parentTrack );
           $(editorList).data("track", levelTrack);
         }
-        else {
-
-          null;
-        }
 
         subListItems.each(function() {
           var text = $(this).find( ".dd3-content" ).first().text(),
@@ -450,8 +445,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
             chapterStart = seqTrackEvent.popcornOptions.start;
             chapterEnd = seqTrackEvent.popcornOptions.end;
             //text = seqTrackEvent.popcornOptions.title;
-          }
-        
+          }        
 
           // If not already in the timeline, create a chapter track event
           if( trackEvent === undefined ) {
@@ -503,10 +497,10 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
     function updateTocTrackEvent() {
       if( _tocTrackEvent ) {
-        var updateOptions = {};
-        var jsonml = JsonML.fromHTML( _tocDisplayList );
+        var updateOptions = {},
+          jsonml = JsonML.fromHTML( _tocDisplayList );
+          
         updateOptions.jsonml = jsonml;
-
         _tocTrackEvent.update( updateOptions );
       }
     }

@@ -520,7 +520,7 @@ function init() {
     }
 
     // Build toc items data list.
-    // Used to switch from one par to another. 
+    // Used to switch from one part to another. 
     for( var i = 0; i < tocLinks.length; i++) {
       var tocLink = tocLinks[ i ];
       tocLink.innerHTML = reconstituteHTML( tocLink.innerHTML );

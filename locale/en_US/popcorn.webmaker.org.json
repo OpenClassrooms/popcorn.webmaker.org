@@ -1,6 +1,7 @@
 {
 	"3D Model": "3D Model",
 	"A project about...": "A project about...",
+	"Activate": "Activate",
 	"Add a layer": "Add a layer",
 	"Add all": "Add all",
 	"Add Event > Track Event Editor": "Add Event > Track Event Editor",
@@ -127,7 +128,6 @@
 	"My new project": "My new project",
 	"Net": "Net",
 	"New": "New",
-	"New chapter": "New chapter",
 	"No Images": "No images were found!",
 	"No thanks, don't send": "No thanks, don't send",
 	"No": "No",
@@ -207,7 +207,6 @@
 	"Star": "Star",
 	"Start": "Start",
 	"Street View": "Street View",
-	"Synchronize": "Synchronize",
 	"Tags": "Tags",
 	"Tail Position": "Tail Position",
 	"Terrain": "Terrain",
