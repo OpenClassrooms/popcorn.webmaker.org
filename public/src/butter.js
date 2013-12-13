@@ -887,6 +887,9 @@ window.Butter = {
             }
             return loadConfigDefault();
           }
+
+var jsonSavedData = JSON.stringify(savedData);
+
           // otherwise, attempt import
           doImport( savedData );
           finishedCallback( project );

@@ -34,6 +34,13 @@
           label: "Text",
           "default": "Popcorn Maker"
         },
+        level: {
+          elem: "input",
+          type: "number",
+          label: "Level",
+          "default": 1,
+          hidden: true
+        },
         start: {
           elem: "input",
           type: "text",

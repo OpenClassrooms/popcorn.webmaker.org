@@ -127,8 +127,9 @@
 // Tooltip that show the time when you hover over/drag the scrubber
 .butter-time-tooltip {
   @_tooltipHeight: 30px;
-  @_tooltipWidth: 70px;
-  width: inherit;
+  @_tooltipWidth: 250px;
+  width: auto;
+  max-width: @_tooltipWidth;
   margin-top: -6px;
   margin-left: -22px;
   /*padding: @_tooltipHeight / 3;*/
@@ -138,19 +139,31 @@
   top: -50px;
   height: @_tooltipHeight;
 
+
+
+  text-align: left;
+  background: #4E555A;
+  border: 0;
+  color: #FFF;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
   &:after, &:before{
     top: 100%;
-    left: 50%;
+    left: 22px;
     border-bottom: none;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid #FFF;
+    border-top: 5px solid;
+    border-top-color: #4E555A;
   }
   &:before {
     top: 100%;
-    left: 50%;
+    left: 22px;
     border-bottom: none;
-    border-top: 5px solid #CCC;
+    border-top: 5px solid #4E555A;
   }
 }
 
@@ -161,7 +174,7 @@
 .time-bar-toc-container {
   position: absolute;
   left: 0;
-  top: -20px;
+  top: -15px;
   height: @_tocBarHeight;
   overflow: visible;
   right: 0;

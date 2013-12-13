@@ -126,6 +126,11 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop" ],
 
     this.addTrackEvent = function( trackEvent ) {
       var trackEventElement = trackEvent.view.element;
+
+      if( trackEvent.type == "chapter" || trackEvent.type == "toc") {
+        return;
+      }
+
       _element.appendChild( trackEventElement );
       _trackEvents.push( trackEvent.view );
       trackEvent.view.parent = _this;
@@ -141,6 +146,10 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop" ],
 
     this.removeTrackEvent = function( trackEvent ){
       var trackEventElement = trackEvent.view.element;
+
+      if( !trackEventElement.parentNode ) {
+        return;
+      }
 
       // When `trackeventdragstarted` occurs, TrackEvents views are removed from their Track's view
       // to avoid unnecessary collisions while dragging. So, it may be the case that the TrackEvent's view

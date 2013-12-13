@@ -391,6 +391,13 @@
         _this.dispatch( "trackorderchanged", _orderedTracks );
       };
 
+      this.getFirstTrack = function() {
+        if ( _orderedTracks.length > 0 ) {
+          return _orderedTracks[0];
+        }
+        return null;
+      }
+
       this.getNextTrack = function( currentTrack ) {
         var trackIndex = _orderedTracks.indexOf( currentTrack );
         if ( trackIndex > -1 && trackIndex < _orderedTracks.length - 1 ) {

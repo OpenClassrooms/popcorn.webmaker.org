@@ -257,7 +257,7 @@
     "Add all": "Ajouter tout",
     "Chapter": "Chapitres",
     "Chapter your project": "Chapitres",
-    "Activate": "Activer",
+    "Activate": "Synchroniser",
     "3D Model": "Modèle 3D",
     "In": "Dans",
     "Duration": "Durée",
@@ -265,5 +265,6 @@
     "Flip Tail?": "Inverser le sens de la queue.",
     "Height": "Hauteur",
     "Underline": "Souligné",
-    "Double click to edit": "Double-cliquez pour modifier"
+    "Double click to edit": "Double-cliquez pour modifier",
+    "Remove all": "Tout supprimer"
 }

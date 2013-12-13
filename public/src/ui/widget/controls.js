@@ -589,9 +589,9 @@ define( [ "util/lang", "util/time", "util/sanitizer", "text!layouts/controls.htm
                     if(tocTooltip.titles.length >= 1)
                       topTitle.innerHTML = tocTooltip.titles[0];
                     if(tocTooltip.titles.length >= 2)
-                        middleTitle.innerHTML = tocTooltip.titles[1];
+                      middleTitle.innerHTML = tocTooltip.titles[1];
                     if(tocTooltip.titles.length == 3)
-                        bottomTitle.innerHTML = tocTooltip.titles[2];
+                      bottomTitle.innerHTML = tocTooltip.titles[2];
 
                   }
                   else if( maxTocDepth == 2 ) {

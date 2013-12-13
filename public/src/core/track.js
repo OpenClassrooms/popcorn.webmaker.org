@@ -338,6 +338,18 @@ define( [ "localized", "./eventmanager", "./trackevent", "./views/track-view", "
       return null;
     };
 
+    function sortTrackEvents(t1, t2) {
+      return t1.popcornOptions.start - t2.popcornOptions.start;
+    }
+
+    this.getLastTrackEvent = function() {
+      var duration = _this._media.duration,
+      sortedTrackEvents = _trackEvents.sort( sortTrackEvents );
+
+      return sortedTrackEvents[ sortedTrackEvents.length-1 ];
+
+    }
+
     this.deselectEvents = function( except ){
       var trackEvent;
       for ( var i = 0, l = _trackEvents.length; i < l; ++i ) {

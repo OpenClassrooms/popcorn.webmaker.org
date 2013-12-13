@@ -151,7 +151,10 @@ define( [ "core/logger", "util/dragndrop", "./ghost-manager" ],
 
       trackView.listen( "trackeventdropped", onTrackEventDropped );
 
-      _container.appendChild( trackView.element );
+      if( !e.data.ghost ) {
+        _container.appendChild( trackView.element );        
+      }
+      
       trackView.duration = _media.duration;
       trackView.parent = _this;
       if ( _vScrollbar ) {

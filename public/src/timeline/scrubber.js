@@ -12,7 +12,7 @@ define( [ "util/time" ],
   return function( butter, parentElement, media, tracksContainer ) {
     var _container = parentElement.querySelector( ".time-bar-scrubber-container" ),
         _tocContainer = parentElement.querySelector( ".time-bar-toc-container" ),
-        _tocTooltip = parentElement.querySelector( ".time-bar-toc-tooltip"),
+        //_tocTooltip = parentElement.querySelector( ".time-bar-toc-tooltip"),
         _node = _container.querySelector( ".time-bar-scrubber-node" ),
         _timeTooltip = _container.querySelector( ".butter-time-tooltip" ),
         _line = _container.querySelector( ".time-bar-scrubber-line" ),
@@ -35,25 +35,52 @@ define( [ "util/time" ],
         _isSeeking = false,
         _seekMouseUp = false,
 
+        //_bookmarks = [[], [], []],
         _bookmarks = [],
         _currentBookmark,
-        _currentBookmarkIndex = 0;
+        _currentBookmarkIndex = 0,
+
+        CHAPTER_INTERVAL = 0.001,
+        CHAPTER_MARK = 0.5, // only materialize a chapter
+        CHAPTER_MIN_DURATION = 1;
+
+    _bookmarks[1] = [];
+    _bookmarks[2] = [];
+    _bookmarks[3] = [];
+
+    function sortBookmarksFunction(b1, b2) {
+      return b1.time - b2.time;
+    }
 
     /**
      * Get bookmark immediately precceding a given bookmark.
      * A chapter is defined only by its start date; its end is implicitely
      * defined by the beginning of the next chapter.
      */
-    function getPreviousBookmarkOf( bookmark ) {
+    function getPrevBookmarkOf( bookmark ) {
       var res = bookmark;
-      for (var i = 0; i < _bookmarks.length; ++i) {
-        var b = _bookmarks[i];
+      var bookmarks = _bookmarks[bookmark.level];
+      for (var i = 0; i < bookmarks.length; ++i) {
+        var b = bookmarks[i];
 
         if( b.time < bookmark.time ) {
           res = b;
         }
         else if( b.time > bookmark.time ) {
           return res;
+        }
+      }
+      return res;
+    }
+
+    function getNextBookmarkOf( bookmark ) {
+      var res = bookmark;
+      var bookmarks = _bookmarks[bookmark.level];
+      for (var i = 0; i < bookmarks.length; ++i) {
+        var b = bookmarks[i];
+
+        if( b.time > bookmark.time ) {
+          res = b;
         }
       }
       return res;
@@ -75,9 +102,9 @@ define( [ "util/time" ],
 
         newBookmarkDiv.style.left = itemLeft;*/
 
-
         bookmark.time = options.start;
         bookmark.title = options.text;
+        bookmark.level = options.level;
         bookmark.trackEvent = butterEvent.data;
         bookmark.div = newBookmarkDiv;
 
@@ -101,7 +128,19 @@ define( [ "util/time" ],
         _tocContainer.appendChild( newBookmarkDiv );
 
         // Add bookmark in the list
-        _bookmarks.push( bookmark );
+        //_bookmarks[ bookmark.level-1 ].push( bookmark );
+        _bookmarks[ bookmark.level ].push( bookmark );
+
+        sortBookmarks();
+    }
+
+    /**
+     * Sort bookmarks by time, for each level list.
+     */
+    function sortBookmarks() {
+      _bookmarks.forEach(function( bookmarks ) {
+        bookmarks.sort( sortBookmarksFunction );
+      });
     }
 
     function onChapterTrackEventUpdate( e ) {
@@ -122,6 +161,10 @@ define( [ "util/time" ],
       _isSeeking = true;
       _seekMouseUp = false;
       _media.listen( "mediaseeked", onSeeked );
+
+      // Sort bookmark array after time position
+      // to resolve right prev and next bookmarks of current one.
+      sortBookmarks();
 
       if( _isPlaying ){
         _media.pause();
@@ -153,6 +196,10 @@ define( [ "util/time" ],
 
       _currentMousePos = e.pageX;
 
+
+      var prevBookmark = getPrevBookmarkOf( _currentBookmark ),
+        nextBookmark = getNextBookmarkOf( _currentBookmark );
+
       if( _scrollInterval === -1 ){
         if( _currentMousePos > _rect.right - MOUSE_SCRUBBER_PIXEL_WINDOW ){
           scrollTracksContainer( "right" );
@@ -162,10 +209,10 @@ define( [ "util/time" ],
         } //if
       } //if
 
-      _tocTooltip.classList.add( "tooltip-no-transition-on" );
+      //_tocTooltip.classList.add( "tooltip-no-transition-on" );
 
       onTimelineMouseMove( e );
-      onToclineMouseMove( e );
+      //onToclineMouseMove( e );
       evalBookmarkPosition( _currentBookmark );
       setNodePosition();
       setBookmarksPositions();
@@ -175,7 +222,7 @@ define( [ "util/time" ],
       _seekMouseUp = true;
 
       _timeTooltip.classList.remove( "tooltip-no-transition-on" );
-      _tocTooltip.classList.add( "tooltip-no-transition-on" );
+      //_tocTooltip.classList.add( "tooltip-no-transition-on" );
 
       if( _isPlaying && !_isSeeking ){
         _media.play();
@@ -190,12 +237,19 @@ define( [ "util/time" ],
 
       // Update chapter track events
       if( _currentBookmark ) {
+        var prevBookmark = getPrevBookmarkOf( _currentBookmark );
+        //prevBookmark.trackEvent.popcornOptions.end = _currentBookmark.time;
+
+        /*if( _currentBookmark.time < prevBookmark.trackEvent.popcornOptions.end ) {
+          _currentBookmark.time = prevBookmark.trackEvent.popcornOptions.end + CHAPTER_INTERVAL;
+        }*/
+
         _currentBookmark.trackEvent.popcornOptions.start = _currentBookmark.time;
-        var prevBookmark = getPreviousBookmarkOf( _currentBookmark );
-        prevBookmark.trackEvent.popcornOptions.end = _currentBookmark.time;
+        _currentBookmark.trackEvent.popcornOptions.end = _currentBookmark.time + CHAPTER_MARK;
 
         _currentBookmark.trackEvent.dispatch("trackeventupdated", _currentBookmark.trackEvent);
-        prevBookmark.trackEvent.dispatch("trackeventupdated", prevBookmark.trackEvent);
+        _currentBookmark.trackEvent.view.update( _currentBookmark.trackEvent.popcornOptions );
+        //prevBookmark.trackEvent.dispatch("trackeventupdated", prevBookmark.trackEvent);
       }
 
 
@@ -205,9 +259,14 @@ define( [ "util/time" ],
     } //onMouseUp
 
     function setBookmarksPositions() {
-      _bookmarks.forEach( function( bookmark ) {
-        setBookmarkPosition( bookmark );
+      _bookmarks.forEach(function( bookmarks ) {
+        bookmarks.forEach( function( bookmark ) {
+          setBookmarkPosition( bookmark );
+        });
       });
+      /*_bookmarks.forEach( function( bookmark ) {
+          setBookmarkPosition( bookmark );
+      });*/
     }
 
     function setBookmarkPosition( bookmark ) {
@@ -354,7 +413,7 @@ define( [ "util/time" ],
       } //if
 
       onTimelineMouseMove( e );
-      onToclineMouseMove( e );
+      //onToclineMouseMove( e );
       evalMousePosition();
       setNodePosition();
       setBookmarksPositions();
@@ -385,7 +444,7 @@ define( [ "util/time" ],
       setTimeTooltip();
     }
 
-    function onToclineMouseMove( e ) {
+    /*function onToclineMouseMove( e ) {
       _toclineMousePos = e.clientX - parentElement.offsetLeft;
 
       if ( _toclineMousePos < 0 ) {
@@ -396,21 +455,55 @@ define( [ "util/time" ],
 
       _tocTooltip.style.left = _toclineMousePos + "px";
       setTocTooltip();
+    }*/
+
+    function getChapterTooltip( targetTime, targetLevel ) {
+      var bookmarks = _bookmarks[ targetLevel ];
+      var targetText = "";
+
+      if( bookmarks.length>0 ) {
+        // Display current chapters 
+        for(var j = 0; j < bookmarks.length-1; j++) {
+          // Get the right chapter label of the current time
+          if( targetTime >= bookmarks[j].time &&
+            targetTime < bookmarks[j+1].time ) {
+
+            targetText += bookmarks[j].trackEvent.popcornOptions.text;
+          }
+        }
+
+        if( targetTime >= bookmarks[bookmarks.length-1].time ) {     
+          targetText += bookmarks[bookmarks.length-1].trackEvent.popcornOptions.text;
+        }
+        return targetText;
+      }
     }
 
     function setTimeTooltip() {
-      _timeTooltip.innerHTML = util.toTimecode( ( _timelineMousePos + _tracksContainer.element.scrollLeft ) / _tracksContainerWidth * _media.duration, 0 );
+      var targetText,
+        targetTime = ( _timelineMousePos + _tracksContainer.element.scrollLeft ) / _tracksContainerWidth * _media.duration;
+      
+      targetText = util.toTimecode( targetTime, 0 );
+      targetText += " " + getChapterTooltip( targetTime, 1 );
+      targetText += " " + getChapterTooltip( targetTime, 2 );
+      targetText += " " + getChapterTooltip( targetTime, 3 );
+      /*targetText += " " + setLevelTooltip( targetTime, 1, targetText );
+      targetText += " " + setLevelTooltip( targetTime, 2, targetText );
+      targetText += " " + setLevelTooltip( targetTime, 3, targetText );*/
+
+      _timeTooltip.innerHTML = targetText;
+
     }
 
-    function setTocTooltip() {
+    /*function setTocTooltip() {
       _tocTooltip.innerHTML = util.toTimecode( ( _toclineMousePos + _tracksContainer.element.scrollLeft ) / _tracksContainerWidth * _media.duration, 0 );
-    }
+    }*/
 
     function onMouseOver( e ) {
       onTimelineMouseMove( e );
-      onToclineMouseMove( e );
+      //onToclineMouseMove( e );
       _timeTooltip.classList.add( "tooltip-no-transition-on" );
-      _tocTooltip.classList.add( "tooltip-no-transition-on" );
+      //_tocTooltip.classList.add( "tooltip-no-transition-on" );
 
       parentElement.addEventListener( "mousemove", onTimelineMouseMove, false );
       parentElement.removeEventListener( "mouseover", onMouseOver, false );
@@ -419,7 +512,7 @@ define( [ "util/time" ],
 
     function onMouseOut() {
       _timeTooltip.classList.remove( "tooltip-no-transition-on" );
-      _tocTooltip.classList.remove( "tooltip-no-transition-on" );
+      //_tocTooltip.classList.remove( "tooltip-no-transition-on" );
 
       parentElement.removeEventListener( "mousemove", onTimelineMouseMove, false );
       parentElement.removeEventListener( "mouseout", onMouseOut, false );
