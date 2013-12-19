@@ -63,7 +63,8 @@
   position: absolute;
   left: 0;
   top: @_scrubberBarHeight;
-  height: ( @_mediaStatusContainerHeight / 2 ) - ( @_scrubberBarHeight / 2 );
+  /*height: ( @_mediaStatusContainerHeight / 2 ) - ( @_scrubberBarHeight / 2 );*/
+  height: 11px;
   overflow: hidden;
   right: 0;
   opacity: 0.5;
@@ -213,20 +214,78 @@
   }
 }
 
-
-
 .time-bar-bookmark-item {
   position: absolute;
-  top: 0;
-  width: 6px;
-  height: 15px;
-  opacity: 0.5;
-  background: #000;
+  width: 10px;
   z-index: 1000000;  
   cursor: pointer;
 }
 
+.time-bar-bookmark-item-arrow {
+  border-style: solid;
+  border-width: 5px;
+  height: 0;
+  width: 0;
+  bottom: -10px;
+}
 
+
+.time-bar-bookmark-item[data-level="1"] {
+  background: #E18080;  
+  height: 15px;
+  line-height: 15px;
+  top: -5px;
+}
+
+.time-bar-bookmark-item[data-level="1"] .time-bar-bookmark-item-arrow {
+  /*border-color: #E18080 transparent transparent transparent!important;
+  border-style: solid;
+  border-width: 5px;
+*/
+  border-color: #E18080 transparent transparent transparent;
+}
+
+.time-bar-bookmark-item[data-level="2"] {
+  background: #86CDFA;
+  height: 10px;
+  line-height: 10px;
+  top: 0px;
+}
+
+.time-bar-bookmark-item[data-level="2"] .time-bar-bookmark-item-arrow {
+  border-color: #86CDFA transparent transparent transparent;
+}
+
+
+.time-bar-bookmark-item[data-level="3"] {
+  background: #E3E126;
+  height: 5px;
+  line-height: 5px;
+  top: 5px;
+}
+
+.time-bar-bookmark-item[data-level="3"] .time-bar-bookmark-item-arrow {
+  border-color: #E3E126 transparent transparent transparent;
+}
+
+
+/*.time-bar-bookmark-item {
+  position: absolute;
+  background-color: #666666;
+  width: 16px;
+  height: 15px;
+  -moz-box-shadow: 0 0 5px #888888;
+  -webkit-box-shadow: 0 0 5px #888888;
+  z-index: 1000000;  
+  cursor: pointer;
+}*/
+
+
+
+
+.time-bar-bookmark-item[data-level="1"] {
+
+}
 
 
 /*********************************************************

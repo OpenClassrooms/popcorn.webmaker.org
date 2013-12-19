@@ -19,10 +19,12 @@ define([ "localized", "editor/editor", "editor/base-editor",
         _clearBtn = _editorContainer.querySelector( ".butter-clear-link" ),
         _renderBtn = _editorContainer.querySelector( ".butter-render-link" ),
 
+        CHAPTER_MAX_LEVEL = 3,
         CHAPTER_ITEM = LangUtils.domFragment( LAYOUT_SRC, ".toc-item" ),
         CHAPTER_INTERVAL = 0.001,
         CHAPTER_MARK = 0.5, // only materialize a chapter
         CHAPTER_MIN_DURATION = 1,
+        CHAPTER_FLOAT_ACCURACY = 100000,
 
         _butter = butter,
         _media = butter.currentMedia,
@@ -122,11 +124,15 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
       if( parentTrackEvent ) {
         level = parentTrackEvent.popcornOptions.level +1;
+
+        if(level > CHAPTER_MAX_LEVEL) { return; }
+
         startTime = parentTrackEvent.popcornOptions.start;
-        //endTime = parentTrackEvent.popcornOptions.end;
-
-
         endTime = getEndTime( parentChapterItem );
+
+        startTime = Math.round( startTime*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
+        endTime = Math.round( endTime*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
+
         createChapterItem( subChapterList, level, startTime, endTime );
       }
     }
@@ -139,7 +145,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
         startBox,
         endBox,
         chapterStart = startTime,
-        chapterEnd = CHAPTER_MARK;
+        chapterEnd = startTime + CHAPTER_MARK;
 
       deleteBtn.addEventListener( "click", onDeleteBtnClick, false );
       createBtn.addEventListener( "click", onCreateSubChapterClick, false );
@@ -166,29 +172,43 @@ define([ "localized", "editor/editor", "editor/base-editor",
         label = _count;
         _count++;
 
-        var lastTrackEvent = _chapterTracks[level].getLastTrackEvent(),
-          lastPopcornOptions,
-          lastMiddleTime;
+        // If first level chapter,
+        // split last first level chapter with the new one
+        if( level == 1 ) {
+          var lastTrackEvent = _chapterTracks[level].getLastTrackEvent(),
+            lastPopcornOptions,
+            lastMiddleTime;
 
-        // If an overlapping track event is detected,
-        // split available time with the new track event
-        if ( lastTrackEvent ) {
-          lastPopcornOptions = lastTrackEvent.popcornOptions;
-          lastMiddleTime = ( lastPopcornOptions.start + endTime )/2;
+          if ( lastTrackEvent ) {
+            lastPopcornOptions = lastTrackEvent.popcornOptions;
+            lastMiddleTime = ( lastPopcornOptions.start + endTime )/2;
 
-          //lastPopcornOptions.end = lastMiddleTime;
-          chapterStart = lastMiddleTime;// + CHAPTER_INTERVAL;
-          chapterEnd = chapterStart + CHAPTER_MARK;
+            chapterStart = lastMiddleTime;
+            chapterEnd = chapterStart + CHAPTER_MARK;
 
-          //if( chapterEnd - chapterStart < CHAPTER_MIN_DURATION ) {
-          if( chapterEnd >= endTime ) {
-            return;
+            if( chapterEnd >= endTime ) {
+              return;
+            }
           }
-
-          lastTrackEvent.update( lastPopcornOptions );
-          lastTrackEvent.view.update( lastPopcornOptions );
-          updateChapterItem( lastTrackEvent );
         }
+        // Else find last chapter item in the target chapter list
+        // and divide time of the last one
+        else if( level >= 1 ) {
+          var lastChapterItem = $(chapterList).find("li").last();
+
+          if( lastChapterItem ) {
+            var lastTrackEvent = lastChapterItem.data("trackEvent");
+
+            if( lastTrackEvent ) {
+              var lastMiddleTime = (lastTrackEvent.popcornOptions.start + endTime )/2;
+              chapterStart = lastMiddleTime;
+              chapterEnd = chapterStart + CHAPTER_MARK;
+
+            }
+
+          }
+        }
+
       }
 
       $(newChapterItem).find( ".dd3-content" ).first().text( label );
@@ -196,6 +216,9 @@ define([ "localized", "editor/editor", "editor/base-editor",
       _tocEditorDiv.classList.add("visible");
       _clearBtn.classList.add("visible");
       chapterList.appendChild( newChapterItem );
+
+      chapterStart = Math.round( chapterStart*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
+      chapterEnd = Math.round( chapterEnd*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
 
       createTrackEvent( newChapterItem, chapterStart, chapterEnd, label, level );
       render();
@@ -211,16 +234,44 @@ define([ "localized", "editor/editor", "editor/base-editor",
     function getEndTime( chapterItem ) {
       var nextChapterItems = $(chapterItem).next(),
         endDate;
-      if(nextChapterItems.length > 0) {
+      // If no sibling chapter item, get upper level chapter item
+      if(nextChapterItems.length == 0) {
+        nextChapterItems = $(chapterItem).parent().parent().next();
+      }
+      if( nextChapterItems.length > 0 ) {
         var nextChapterItem = nextChapterItems[0],
           nextChapterTrackEvent = $(nextChapterItem).data("trackEvent");
 
         if( nextChapterTrackEvent ) {
-          endDate = nextChapterTrackEvent.popcornOptions.start - CHAPTER_INTERVAL;
+          endDate = nextChapterTrackEvent.popcornOptions.start;// - CHAPTER_INTERVAL;
           return endDate;
         }
       }
       return _media.duration;
+    }
+
+    /**
+     * Get the very last chapter track event in the timeline.
+     * Usefull to instert a new chapter track event in last position.
+     */
+    function getLastChapterTrackEvent() {
+      var lastTrackEvents = [];
+
+      lastTrackEvents[1] = _chapterTracks[1].getLastTrackEvent(),
+      lastTrackEvents[2] = _chapterTracks[2].getLastTrackEvent(),
+      lastTrackEvents[3] = _chapterTracks[3].getLastTrackEvent();
+
+      var lastTrackEventStartTime = 0,
+        lastTrackEvent;
+      for(var i = 1; i <= _chapterTracks.length; i++) {
+        if( lastTrackEvents[i] &&
+          lastTrackEvents[i].popcornOptions.start > lastTrackEventStartTime ) {
+          lastTrackEvent = lastTrackEvents[i];
+          lastTrackEventStartTime = lastTrackEvent.popcornOptions.start;          
+        }
+      }
+
+      return lastTrackEvent;
     }
 
     function onDeleteBtnClick(e) {
@@ -420,7 +471,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
           overlapMiddleTime = ( overlapPopcornOptions.start + end )/2;
 
           overlapPopcornOptions.end = overlapMiddleTime;
-          start = overlapMiddleTime + CHAPTER_INTERVAL;
+          start = overlapMiddleTime;// + CHAPTER_INTERVAL;
 
           overlapTrackEvent.update( overlapPopcornOptions );
           overlapTrackEvent.view.update( overlapPopcornOptions );
@@ -559,7 +610,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
               lastMiddleTime = ( lastPopcornOptions.start + end )/2;
 
               lastPopcornOptions.end = lastMiddleTime;
-              chapterStart = lastMiddleTime + CHAPTER_INTERVAL;
+              chapterStart = lastMiddleTime;// + CHAPTER_INTERVAL;
 
               lastTrackEvent.update( lastPopcornOptions );
               lastTrackEvent.view.update( lastPopcornOptions );
@@ -822,7 +873,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
         _media = butter.currentMedia;
         _this = this;
 
-        $('#toc-div').nestable({"maxDepth":3, "group":1});
+        $('#toc-div').nestable({"maxDepth":CHAPTER_MAX_LEVEL, "group":1});
 
         $('#toc-div').on('keypress', '.toc-item-content[contenteditable]',
         function(event) {

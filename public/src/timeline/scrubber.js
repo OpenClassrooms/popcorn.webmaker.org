@@ -40,13 +40,18 @@ define( [ "util/time" ],
         _currentBookmark,
         _currentBookmarkIndex = 0,
 
-        CHAPTER_INTERVAL = 0.001,
-        CHAPTER_MARK = 0.5, // only materialize a chapter
-        CHAPTER_MIN_DURATION = 1;
+        BOOKMARK_WIDTH = 5; // to align the bookmark
 
-    _bookmarks[1] = [];
+        //CHAPTER_INTERVAL = 0.001,
+        CHAPTER_MARK = 0.5, // only materialize a chapter
+        //CHAPTER_MIN_DURATION = 1,
+        CHAPTER_MOVE_MARGIN = 1.5;
+        CHAPTER_MOVE_MAGNET = 1;
+        CHAPTER_FLOAT_ACCURACY = 100000;
+
+    /*_bookmarks[1] = [];
     _bookmarks[2] = [];
-    _bookmarks[3] = [];
+    _bookmarks[3] = [];*/
 
     function sortBookmarksFunction(b1, b2) {
       return b1.time - b2.time;
@@ -59,11 +64,11 @@ define( [ "util/time" ],
      */
     function getPrevBookmarkOf( bookmark ) {
       var res = bookmark;
-      var bookmarks = _bookmarks[bookmark.level];
+      var bookmarks = _bookmarks;//[bookmark.level];
       for (var i = 0; i < bookmarks.length; ++i) {
         var b = bookmarks[i];
 
-        if( b.time < bookmark.time ) {
+        if( b != bookmark && b.time <= bookmark.time ) {
           res = b;
         }
         else if( b.time > bookmark.time ) {
@@ -75,17 +80,31 @@ define( [ "util/time" ],
 
     function getNextBookmarkOf( bookmark ) {
       var res = bookmark;
-      var bookmarks = _bookmarks[bookmark.level];
+      var bookmarks = _bookmarks;//[bookmark.level];
       for (var i = 0; i < bookmarks.length; ++i) {
         var b = bookmarks[i];
-
         if( b.time > bookmark.time ) {
-          res = b;
+          return b;
         }
       }
       return res;
     }
 
+
+    function getTimeOfNextBookmarkSameLevel( targetIndex, targetLevel ) {
+      var bookmarks = _bookmarks;
+
+      for(var j = targetIndex + 1; j < bookmarks.length; j++) {
+        if( bookmarks[j].level <= targetLevel ) {
+          return bookmarks[j].time;
+        }
+        else {
+          continue;
+        }
+      }
+
+      return _media.duration;
+    }
 
     /**
      * Add a chapter bookmark when a chapter has been added in chapter editor
@@ -93,9 +112,17 @@ define( [ "util/time" ],
     function addBookmark( butterEvent ) {
       var bookmark = {},
         newBookmarkDiv = document.createElement('div'),
+        //newBookmarkDivRect = document.createElement('div'),
+        newBookmarkDivArrow = document.createElement('div'),
         options = butterEvent.data.popcornOptions;
 
         newBookmarkDiv.classList.add("time-bar-bookmark-item");
+        newBookmarkDiv.innerHTML = "&nbsp;";
+
+        newBookmarkDivArrow.classList.add("time-bar-bookmark-item-arrow");
+        newBookmarkDiv.appendChild( newBookmarkDivArrow );
+
+        newBookmarkDiv.setAttribute("data-level", options.level);
 
         /*var itemLeft = start/_media.duration * 100 + "%",
           itemWidth = (end-start)/_media.duration * 100 + "%";
@@ -117,9 +144,9 @@ define( [ "util/time" ],
         $( newBookmarkDiv ).data("bookmark", bookmark);
 
         // Set event listeners for all bookmarks but the first
-        if( bookmark.time != 0) {
+        //if( bookmark.time != 0) {
           newBookmarkDiv.addEventListener("mousedown", bookmarkMouseDown, false);          
-        }
+        //}
 
         // Listen to chapter track event updates
         butterEvent.data.listen( "trackeventupdated", onChapterTrackEventUpdate );
@@ -129,7 +156,8 @@ define( [ "util/time" ],
 
         // Add bookmark in the list
         //_bookmarks[ bookmark.level-1 ].push( bookmark );
-        _bookmarks[ bookmark.level ].push( bookmark );
+        //_bookmarks[ bookmark.level ].push( bookmark );
+        _bookmarks.push( bookmark );
 
         sortBookmarks();
     }
@@ -138,9 +166,10 @@ define( [ "util/time" ],
      * Sort bookmarks by time, for each level list.
      */
     function sortBookmarks() {
-      _bookmarks.forEach(function( bookmarks ) {
+      /*_bookmarks.forEach(function( bookmarks ) {
         bookmarks.sort( sortBookmarksFunction );
-      });
+      });*/
+      _bookmarks.sort( sortBookmarksFunction );
     }
 
     function onChapterTrackEventUpdate( e ) {
@@ -195,7 +224,9 @@ define( [ "util/time" ],
       }
 
       _currentMousePos = e.pageX;
+      _timelineMousePos = e.clientX - parentElement.offsetLeft;
 
+      var currentTime = ( _timelineMousePos + _tracksContainer.element.scrollLeft ) / _tracksContainerWidth * _media.duration;
 
       var prevBookmark = getPrevBookmarkOf( _currentBookmark ),
         nextBookmark = getNextBookmarkOf( _currentBookmark );
@@ -209,13 +240,66 @@ define( [ "util/time" ],
         } //if
       } //if
 
+      // Stop if cursor is outside timeline
+      if( currentTime > _media.duration - CHAPTER_MOVE_MARGIN ) {
+        return;
+      }
+
+      // Stop if current bookmark is in the area of previous one
+      // Case: n can be dragged between (n-1) and (n+1)
+      if( _currentBookmark != prevBookmark &&
+        prevBookmark.level == _currentBookmark.level && 
+        currentTime <= prevBookmark.time + CHAPTER_MOVE_MARGIN ) {
+        return;
+      }
+
+      // Case: 1.1 can be dragged at same date of 1 but not on the left
+      if( prevBookmark.level == (_currentBookmark.level - 1) && 
+        currentTime <= prevBookmark.time ) {
+        return;
+      }
+
+      // Case: 1 can be dragged just at same date of 1.1 but not on the right
+      if( nextBookmark.level == (_currentBookmark.level + 1) && 
+        currentTime >= nextBookmark.time ) {
+        return;
+      }
+
+      if( prevBookmark.level > _currentBookmark.level && 
+        currentTime <= prevBookmark.time + CHAPTER_MOVE_MARGIN ) {
+        return;
+      }
+
+      // Stop if current bookmark is in the area of next one
+      if( _currentBookmark != nextBookmark &&
+        nextBookmark.level <= _currentBookmark.level && 
+        currentTime >= nextBookmark.time - CHAPTER_MOVE_MARGIN) {
+        return;
+      }
+
+      // Magnetism
+      if( _currentBookmark != prevBookmark &&
+        prevBookmark.time + CHAPTER_MOVE_MAGNET >= currentTime ) {
+        _currentBookmark.time = prevBookmark.time;
+      }
+
+      else if( _currentBookmark != nextBookmark &&
+        nextBookmark.time - CHAPTER_MOVE_MAGNET <= currentTime ) {
+        _currentBookmark.time = nextBookmark.time;
+      }
+      else {        
+        evalBookmarkPosition( _currentBookmark );
+      }
+
+
       //_tocTooltip.classList.add( "tooltip-no-transition-on" );
 
       onTimelineMouseMove( e );
       //onToclineMouseMove( e );
-      evalBookmarkPosition( _currentBookmark );
       setNodePosition();
       setBookmarksPositions();
+
+      //sortBookmarks();
     } //onBookmarkMouseMove
 
     function bookmarkMouseUp() {
@@ -244,10 +328,14 @@ define( [ "util/time" ],
           _currentBookmark.time = prevBookmark.trackEvent.popcornOptions.end + CHAPTER_INTERVAL;
         }*/
 
+        _currentBookmark.time = Math.round( _currentBookmark.time*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
+
         _currentBookmark.trackEvent.popcornOptions.start = _currentBookmark.time;
         _currentBookmark.trackEvent.popcornOptions.end = _currentBookmark.time + CHAPTER_MARK;
 
         _currentBookmark.trackEvent.dispatch("trackeventupdated", _currentBookmark.trackEvent);
+        //_currentBookmark.trackEvent.view.update( _currentBookmark.trackEvent.popcornOptions );
+        _currentBookmark.trackEvent.update( _currentBookmark.trackEvent.popcornOptions );
         _currentBookmark.trackEvent.view.update( _currentBookmark.trackEvent.popcornOptions );
         //prevBookmark.trackEvent.dispatch("trackeventupdated", prevBookmark.trackEvent);
       }
@@ -256,17 +344,19 @@ define( [ "util/time" ],
       parentElement.addEventListener( "mouseover", onMouseOver, false );
       window.removeEventListener( "mouseup", bookmarkMouseUp, false );
       window.removeEventListener( "mousemove", bookmarkMouseMove, false );
+
+      sortBookmarks();
     } //onMouseUp
 
     function setBookmarksPositions() {
-      _bookmarks.forEach(function( bookmarks ) {
+      /*_bookmarks.forEach(function( bookmarks ) {
         bookmarks.forEach( function( bookmark ) {
           setBookmarkPosition( bookmark );
         });
-      });
-      /*_bookmarks.forEach( function( bookmark ) {
-          setBookmarkPosition( bookmark );
       });*/
+      _bookmarks.forEach( function( bookmark ) {
+          setBookmarkPosition( bookmark );
+      });
     }
 
     function setBookmarkPosition( bookmark ) {
@@ -289,9 +379,12 @@ define( [ "util/time" ],
         bookmark.div.style.display = "none";
       }
       else {
-        bookmark.div.style.left = adjustedPos + "px";
+        bookmark.div.style.left = adjustedPos - BOOKMARK_WIDTH + "px";
         bookmark.div.style.display = "block";
       } //if
+
+      //_media.dispatch("trackeventupdated", bookmark.trackEvent);
+      //bookmark.trackEvent.view.update( bookmark.trackEvent.popcornOptions );
     }
 
     function setNodePosition() {
@@ -371,7 +464,7 @@ define( [ "util/time" ],
           else{
             _currentMousePos += SCROLL_DISTANCE;
             _tracksContainer.element.scrollLeft += SCROLL_DISTANCE;
-            evalMousePosition();
+            //evalMousePosition();
             setNodePosition();
             setBookmarksPositions();
           }
@@ -386,7 +479,7 @@ define( [ "util/time" ],
           else{
             _currentMousePos -= SCROLL_DISTANCE;
             _tracksContainer.element.scrollLeft -= SCROLL_DISTANCE;
-            evalMousePosition();
+            //evalMousePosition();
             setNodePosition();
             setBookmarksPositions();
           }
@@ -458,25 +551,32 @@ define( [ "util/time" ],
     }*/
 
     function getChapterTooltip( targetTime, targetLevel ) {
-      var bookmarks = _bookmarks[ targetLevel ];
+      var bookmarks = _bookmarks;//[ targetLevel ];
       var targetText = "";
 
       if( bookmarks.length>0 ) {
         // Display current chapters 
         for(var j = 0; j < bookmarks.length-1; j++) {
+
+          if( bookmarks[j].level != targetLevel ) {
+            continue;
+          }
+
           // Get the right chapter label of the current time
           if( targetTime >= bookmarks[j].time &&
-            targetTime < bookmarks[j+1].time ) {
+            targetTime < getTimeOfNextBookmarkSameLevel(j, targetLevel) ) {
 
             targetText += bookmarks[j].trackEvent.popcornOptions.text;
           }
         }
 
-        if( targetTime >= bookmarks[bookmarks.length-1].time ) {     
+        // Limit condition for last bookmark
+        if( targetTime >= bookmarks[bookmarks.length-1].time &&
+          bookmarks[bookmarks.length-1].level == targetLevel ) {
           targetText += bookmarks[bookmarks.length-1].trackEvent.popcornOptions.text;
         }
-        return targetText;
       }
+      return targetText;
     }
 
     function setTimeTooltip() {
@@ -601,6 +701,12 @@ define( [ "util/time" ],
 
       trackEvent.unlisten( "trackeventupdated", onChapterTrackEventUpdate );
       $( trackEvent ).removeData("bookmark");
+
+      // Remove bookmark from list
+      var index = _bookmarks.indexOf( bookmark );
+      if( index > -1 ) {
+        _bookmarks.splice(index, 1);
+      }
     }
 
 

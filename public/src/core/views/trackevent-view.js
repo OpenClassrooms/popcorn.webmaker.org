@@ -34,9 +34,9 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop",
     EventManager.extend( _this );
 
     function resetContainer() {
-      if( trackEvent.type == "chapter" || trackEvent.type == "toc") {
+      /*if( trackEvent.type == "chapter" || trackEvent.type == "toc") {
         return;
-      }
+      }*/
       
       if ( !_trackEvent.track || !_trackEvent.track._media ) {
         return;

@@ -303,6 +303,12 @@ define( [ "util/lang", "text!layouts/super-scrollbar.html" ],
       var trackEventVisual = document.createElement( "div" ),
           style = trackEvent.view.element.style;
       trackEventVisual.classList.add( "butter-super-scrollbar-trackevent" );
+      trackEventVisual.setAttribute("data-type", trackEvent.type);
+
+      if( trackEvent.type === "chapter" ) {
+        trackEventVisual.setAttribute("data-level", trackEvent.popcornOptions.level);
+      }
+
       _trackEventVisuals[ trackEvent.id ] = trackEventVisual;
       _visuals.appendChild( trackEventVisual );
       trackEventVisual.style.width = style.width;

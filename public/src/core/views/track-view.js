@@ -127,9 +127,9 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop" ],
     this.addTrackEvent = function( trackEvent ) {
       var trackEventElement = trackEvent.view.element;
 
-      if( trackEvent.type == "chapter" || trackEvent.type == "toc") {
+      /*if( trackEvent.type == "chapter" || trackEvent.type == "toc") {
         return;
-      }
+      }*/
 
       _element.appendChild( trackEventElement );
       _trackEvents.push( trackEvent.view );
