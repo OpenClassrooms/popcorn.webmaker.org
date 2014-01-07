@@ -16,6 +16,7 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop",
         _icon = document.getElementById( _type + "-icon" ),
         _start = inputOptions.start || 0,
         _end = inputOptions.end || _start + 1,
+        _viewEndTime = inputOptions.viewEndTime,
         _parent,
         _handles,
         _typeElement = _element.querySelector( ".title" ),
@@ -34,7 +35,7 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop",
     EventManager.extend( _this );
 
     function resetContainer() {
-      /*if( trackEvent.type == "chapter" || trackEvent.type == "toc") {
+      /*if( trackEvent.type == "toc") {
         return;
       }*/
       
@@ -45,7 +46,12 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop",
         _trackEvent.track.view.element.appendChild( _element );
       }
       _element.style.left = _start  / _trackEvent.track._media.duration * 100 + "%";
-      _element.style.width = ( _end - _start ) / _trackEvent.track._media.duration * 100 + "%";
+      if( _viewEndTime ) {
+        _element.style.width = ( _viewEndTime - _start ) / _trackEvent.track._media.duration * 100 + "%";
+      }
+      else {
+        _element.style.width = ( _end - _start ) / _trackEvent.track._media.duration * 100 + "%";        
+      }
 
       _this.setResizeArrows();
     }
@@ -66,6 +72,9 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop",
       }
       if ( !isNaN( options.end ) ) {
         _end = options.end;
+      }
+      if ( !isNaN( options.viewEndTime ) ) {
+        _viewEndTime = options.viewEndTime;
       }
       resetContainer();
     }; //update
@@ -156,12 +165,23 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop",
           resetContainer();
         }
       },
+      /*viewEndTime: {        
+        enumerable: true,
+        get: function(){ return _viewEndTime; },
+        set: function( val ){
+          _viewEndTime = val;
+          resetContainer();
+        }
+      },*/
       type: {
         enumerable: true,
         get: function(){ return _type; },
         set: function( val ){
           _type = val;
           _element.setAttribute( "data-butter-trackevent-type", _type );
+          if(_type === "chapter") {
+            _element.setAttribute( "data-butter-trackevent-chapter-level", inputOptions.level );
+          }
         }
       },
       elementText: {
@@ -205,6 +225,10 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop",
         },
         set: function( val ){
           _parent = val;
+
+          if( _type == "chapter" ) {
+            return;
+          }
 
           if( _draggable ){
             _draggable.destroy();

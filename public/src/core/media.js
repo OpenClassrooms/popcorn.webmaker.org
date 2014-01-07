@@ -114,9 +114,9 @@
         }
       };
 
-      function ensureNewTrackIsTrack( track ) {
+      function ensureNewTrackIsTrack( track, ghost ) {
         if ( !( track instanceof Track ) ) {
-          track = new Track( track );
+          track = new Track( track, ghost );
         }
         return track;
       }
@@ -144,13 +144,13 @@
         }
       }
 
-      this.addTrack = function ( track, forceFirst ) {
+      this.addTrack = function ( track, forceFirst, ghost ) {
 
         if ( forceFirst && _orderedTracks[ 0 ] ) {
-          return _this.insertTrackBefore( _orderedTracks[ 0 ] );
+          return _this.insertTrackBefore( _orderedTracks[ 0 ], null, ghost );
         }
 
-        track = ensureNewTrackIsTrack( track );
+        track = ensureNewTrackIsTrack( track, ghost );
 
         if ( track._media ) {
           throw "Track already belongs to a Media object. Use `media.removeTrack` prior to this function.";
@@ -159,7 +159,9 @@
         // Give new track last order since it's newest
         track.order = _tracks.length;
 
-        setupNewTrack( track );
+        if( !ghost ) {
+          setupNewTrack( track );
+        }
 
         // Simply add the track onto the ordered tracks array
         _orderedTracks.push( track );
@@ -172,8 +174,8 @@
         return track;
       };
 
-      this.insertTrackBefore = function( otherTrack, newTrack ) {
-        newTrack = ensureNewTrackIsTrack( newTrack );
+      this.insertTrackBefore = function( otherTrack, newTrack, ghost ) {
+        newTrack = ensureNewTrackIsTrack( newTrack, ghost );
 
         if ( newTrack._media ) {
           throw "Track already belongs to a Media object. Use `media.removeTrack` prior to this function.";

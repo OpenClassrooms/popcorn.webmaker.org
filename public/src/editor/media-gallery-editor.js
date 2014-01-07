@@ -717,7 +717,7 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
     }
 
     // Send sequence track to chapter editor
-    ///_media.dispatch("sequencetrackadded", _mediaTrack);
+    //_media.dispatch("sequencetrackadded", _mediaTrack);
   }
 
   Editor.register( "media-editor", null, function( rootElement, butter ) {

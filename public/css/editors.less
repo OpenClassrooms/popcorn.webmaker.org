@@ -769,7 +769,6 @@ textarea {
 * Chapter Editor -- src/layouts/chapter-editor.html
 */
 
-.butter-new-entry-link,
 .butter-render-link,
  {
   width: 49%;
@@ -783,8 +782,12 @@ textarea {
   }
 }
 
+#toc-div li > ol {
+  -webkit-padding-start: 30px;
+  padding-start: 30px;
+}
 
-.butter-clear-link {
+.butter-remove-table-link {
   .clearfix();
   visibility: hidden;
   &.visible {

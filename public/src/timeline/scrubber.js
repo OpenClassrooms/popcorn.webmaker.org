@@ -47,6 +47,9 @@ define( [ "util/time" ],
         //CHAPTER_MIN_DURATION = 1,
         CHAPTER_MOVE_MARGIN = 1.5;
         CHAPTER_MOVE_MAGNET = 1;
+
+        // Below this limit a chapter is considered as immediately previous to another one
+        CHAPTER_PREV_MARGIN = 1;
         CHAPTER_FLOAT_ACCURACY = 100000;
 
     /*_bookmarks[1] = [];
@@ -64,17 +67,46 @@ define( [ "util/time" ],
      */
     function getPrevBookmarkOf( bookmark ) {
       var res = bookmark;
-      var bookmarks = _bookmarks;//[bookmark.level];
+      var bookmarks = _bookmarks;
       for (var i = 0; i < bookmarks.length; ++i) {
         var b = bookmarks[i];
 
         if( b != bookmark && b.time <= bookmark.time ) {
           res = b;
         }
+        // When bookmark is the first of all
         else if( b.time > bookmark.time ) {
           return res;
         }
       }
+      return res;
+    }
+
+    /**
+     * Given a bookmark of level n,
+     * get all immediately preceeding bookmarks of level k > n.
+     */
+    function getAllPrevBookmarksOf( bookmark ) {
+      var res = [];
+      var bookmarks = _bookmarks;
+      for (var l = bookmark.level; l <= 3; ++l) {
+        var resBookmark;
+        for (var i = 0; i < bookmarks.length; ++i) {
+          var b = bookmarks[i];
+
+          if( b != bookmark && b.time <= bookmark.time && b.level == l ) {
+            resBookmark = b;
+          }
+
+        }
+        // If found bookmark is well immediately preceeding the given bookmark
+        // using the chapter margin
+        if( resBookmark !== undefined
+          && resBookmark.trackEvent.popcornOptions.viewEndTime > bookmark.trackEvent.popcornOptions.start - CHAPTER_PREV_MARGIN ) {
+          res.push( resBookmark );
+        }
+      }
+
       return res;
     }
 
@@ -245,47 +277,64 @@ define( [ "util/time" ],
         return;
       }
 
-      // Stop if current bookmark is in the area of previous one
-      // Case: n can be dragged between (n-1) and (n+1)
+      // Rules for bookmarks moving limits
+
+      // Example: 2 can be dragged between 1 and 3
       if( _currentBookmark != prevBookmark &&
         prevBookmark.level == _currentBookmark.level && 
         currentTime <= prevBookmark.time + CHAPTER_MOVE_MARGIN ) {
         return;
       }
 
-      // Case: 1.1 can be dragged at same date of 1 but not on the left
+      // Example: 1.1 can be dragged at same date of 1 but not further on the left
       if( prevBookmark.level == (_currentBookmark.level - 1) && 
         currentTime <= prevBookmark.time ) {
         return;
       }
 
-      // Case: 1 can be dragged just at same date of 1.1 but not on the right
+      // Example: 1 can be dragged at same date of 1.1 but not further on the right
       if( nextBookmark.level == (_currentBookmark.level + 1) && 
         currentTime >= nextBookmark.time ) {
         return;
       }
 
+      // Example: 2 can't be dragged on the left of 1.3 in a given margin
       if( prevBookmark.level > _currentBookmark.level && 
         currentTime <= prevBookmark.time + CHAPTER_MOVE_MARGIN ) {
         return;
       }
 
-      // Stop if current bookmark is in the area of next one
+      // Example: 1.3 can't be dragged on the right of 2 in a given margin
       if( _currentBookmark != nextBookmark &&
         nextBookmark.level <= _currentBookmark.level && 
         currentTime >= nextBookmark.time - CHAPTER_MOVE_MARGIN) {
         return;
       }
 
-      // Magnetism
+      // Example: 1 can't go between 1.1 and 1.2
+      if( _currentBookmark != nextBookmark &&
+        _currentBookmark != prevBookmark &&
+        prevBookmark.level >= _currentBookmark.level && 
+        nextBookmark.level >= _currentBookmark.level && 
+        currentTime >= nextBookmark.time - CHAPTER_MOVE_MARGIN &&
+        currentTime >= prevBookmark.time + CHAPTER_MOVE_MARGIN) {
+        return;
+      }
+
+      // Rules for bookmark moving magnetism
+
+      // Example: 1.1 can go at same date of 1
+      // Counter example: 2 can't go 
       if( _currentBookmark != prevBookmark &&
         prevBookmark.time + CHAPTER_MOVE_MAGNET >= currentTime ) {
         _currentBookmark.time = prevBookmark.time;
       }
 
+      // Example: 1 can't go at same date of 1.1 nor 1.2
       else if( _currentBookmark != nextBookmark &&
         nextBookmark.time - CHAPTER_MOVE_MAGNET <= currentTime ) {
-        _currentBookmark.time = nextBookmark.time;
+        //_currentBookmark.time = nextBookmark.time;
+        return;
       }
       else {        
         evalBookmarkPosition( _currentBookmark );
@@ -321,7 +370,8 @@ define( [ "util/time" ],
 
       // Update chapter track events
       if( _currentBookmark ) {
-        var prevBookmark = getPrevBookmarkOf( _currentBookmark );
+        var prevBookmark = getPrevBookmarkOf( _currentBookmark ),
+          allPrevBookmarks = getAllPrevBookmarksOf( _currentBookmark );
         //prevBookmark.trackEvent.popcornOptions.end = _currentBookmark.time;
 
         /*if( _currentBookmark.time < prevBookmark.trackEvent.popcornOptions.end ) {
@@ -334,10 +384,20 @@ define( [ "util/time" ],
         _currentBookmark.trackEvent.popcornOptions.end = _currentBookmark.time + CHAPTER_MARK;
 
         _currentBookmark.trackEvent.dispatch("trackeventupdated", _currentBookmark.trackEvent);
-        //_currentBookmark.trackEvent.view.update( _currentBookmark.trackEvent.popcornOptions );
         _currentBookmark.trackEvent.update( _currentBookmark.trackEvent.popcornOptions );
         _currentBookmark.trackEvent.view.update( _currentBookmark.trackEvent.popcornOptions );
-        //prevBookmark.trackEvent.dispatch("trackeventupdated", prevBookmark.trackEvent);
+
+        for (var i = 0; i < allPrevBookmarks.length; ++i) {
+          var b = allPrevBookmarks[i];
+
+          b.trackEvent.popcornOptions.viewEndTime = _currentBookmark.time;
+
+          b.trackEvent.dispatch("trackeventupdated", b.trackEvent);
+          b.trackEvent.update( b.trackEvent.popcornOptions );
+          b.trackEvent.view.update( b.trackEvent.popcornOptions );
+
+        }
+
       }
 
 

@@ -134,7 +134,10 @@ define( [ "core/logger", "util/dragndrop", "./ghost-manager" ],
       var tracks = _media.orderedTracks;
       for ( var i = 0, il = tracks.length; i < il; ++i ) {
         var trackView = tracks[ i ].view;
-        _container.appendChild( trackView.element );
+
+        if( !tracks[ i ].ghost ) {
+          _container.appendChild( trackView.element );
+        }
         trackView.duration = _media.duration;
         trackView.parent = _this;
       }

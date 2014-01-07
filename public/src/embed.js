@@ -492,7 +492,6 @@ function init() {
           }
 
           // Table of contents settings
-
           jsonToc = popcorn.data.running.toc ? popcorn.data.running.toc[0].jsonml : null;
           htmlToc = jsonToc ? JsonML.toHTML( jsonToc ) : document.createElement("ol");
 

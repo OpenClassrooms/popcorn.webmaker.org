@@ -78,6 +78,7 @@
     "Link URL": "URL du lien",
     "Location": "Localisation",
     "New": "Nouveau",
+    "Create Table of Contents": "Créer une table des matières",
     "Net": "Réseau",
     "Save": "Enregistrer",
     "Type": "Type",
@@ -266,5 +267,8 @@
     "Height": "Hauteur",
     "Underline": "Souligné",
     "Double click to edit": "Double-cliquez pour modifier",
-    "Remove all": "Tout supprimer"
+    "Remove all": "Tout supprimer",
+    "Remove Table of Contents": "Supprimer la table des matières",
+    "Add a sub-chapter": "Ajouter un sous chapitre",
+    "Add a next chapter": "Ajouter un prochain chapitre"
 }

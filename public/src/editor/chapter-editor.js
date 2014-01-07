@@ -15,14 +15,15 @@ define([ "localized", "editor/editor", "editor/base-editor",
         _tocEditorDiv = rootElement.querySelector( "#toc-div" ),
         _tocEditorList = _editorContainer.querySelector( "#toc-ol" ),
 
-        _createChapterBtn = _editorContainer.querySelector( ".butter-new-entry-link" ),
-        _clearBtn = _editorContainer.querySelector( ".butter-clear-link" ),
-        _renderBtn = _editorContainer.querySelector( ".butter-render-link" ),
+        _createTableBtn = _editorContainer.querySelector( ".butter-create-table-link" ),
+        _removeTableBtn = _editorContainer.querySelector( ".butter-remove-table-link" ),
+        //_renderBtn = _editorContainer.querySelector( ".butter-render-link" ),
 
         CHAPTER_MAX_LEVEL = 3,
         CHAPTER_ITEM = LangUtils.domFragment( LAYOUT_SRC, ".toc-item" ),
         CHAPTER_INTERVAL = 0.001,
-        CHAPTER_MARK = 0.5, // only materialize a chapter
+        TABLE_MARK = 0.001, // Arbitrary time to materialize a toc trackevent
+        CHAPTER_MARK = 0.5, // Arbitrary time to materialize a chapter trackevent
         CHAPTER_MIN_DURATION = 1,
         CHAPTER_FLOAT_ACCURACY = 100000,
 
@@ -34,6 +35,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
         _tocOptions = {},
         _tocDisplayList = document.createElement( "ul" ),
 
+        _mediaTrack,
         _tocTrack,
         _chapterTracks = [],
 
@@ -92,35 +94,43 @@ define([ "localized", "editor/editor", "editor/base-editor",
       }, false );
     }
 
+    function onCreateTableBtnClick(event) {
+      _createTableBtn.style.display = 'none';
+      onCreateChapterClick(event);
+    }
+
     function onCreateChapterClick(event) {
       var level = 1,
         startTime = 0,
-        endTime = _media.duration,
-        newChapterItem;
+        endTime = _media.duration;
 
       createChapterItem( _tocEditorList, level, startTime, endTime );
     }
 
-    function onClearBtnClick(event) {
+    function onRemoveTableBtnClick(event) {
       clearEditorList();
+      _createTableBtn.style.display = 'inline-block';
     }
 
     function onCreateSubChapterClick(event) {
-      var parentChapterItem = event.target.parentNode;
-      var parentTrackEvent = $(parentChapterItem).data("trackEvent");
+      createSubChapterFor( event.target.parentNode );
+    }
+
+    function createSubChapterFor( chapterItem ) {
+      var parentTrackEvent = $( chapterItem ).data("trackEvent");
       
-      var foundSubChapterList = $(event.target.parentNode).find("> ol"),
+      var foundSubChapterList = $( chapterItem ).find("> ol"),
         subChapterList;
 
       if( foundSubChapterList.length==0 ) {
         subChapterList = document.createElement( "ol" );
-        parentChapterItem.appendChild( subChapterList );
+        chapterItem.appendChild( subChapterList );
       }
       else {
         subChapterList = foundSubChapterList[0];
       }
 
-      var level, startTime, endTime, newChapterItem;
+      var level, startTime, endTime;
 
       if( parentTrackEvent ) {
         level = parentTrackEvent.popcornOptions.level +1;
@@ -128,7 +138,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
         if(level > CHAPTER_MAX_LEVEL) { return; }
 
         startTime = parentTrackEvent.popcornOptions.start;
-        endTime = getEndTime( parentChapterItem );
+        endTime = getEndTime( chapterItem );
 
         startTime = Math.round( startTime*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
         endTime = Math.round( endTime*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
@@ -137,39 +147,58 @@ define([ "localized", "editor/editor", "editor/base-editor",
       }
     }
 
+    function onCreateNextChapterClick(event) {
+      var parentChapterItem = $( event.target.parentNode ).parents("li").get(0);
+      createSubChapterFor( parentChapterItem );
+    }
+
     function createChapterItem( chapterList, level, startTime, endTime, seqTrackEvent ) {
       var newChapterItem = CHAPTER_ITEM.cloneNode( true ),
         deleteBtn = newChapterItem.querySelector( ".toc-item-delete" ),
+        createSubBtn = newChapterItem.querySelector( ".toc-item-handle" ),
         createBtn = newChapterItem.querySelector( ".toc-item-create" ),
-        label,
+        text,
         startBox,
         endBox,
+        newPopcornOptions = {},
         chapterStart = startTime,
         chapterEnd = startTime + CHAPTER_MARK;
 
+      newPopcornOptions.viewEndTime = endTime;
+
       deleteBtn.addEventListener( "click", onDeleteBtnClick, false );
-      createBtn.addEventListener( "click", onCreateSubChapterClick, false );
+      createSubBtn.addEventListener( "click", onCreateSubChapterClick, false );
+
+      if( level === 1 ) {
+        createBtn.addEventListener( "click", onCreateChapterClick, false );
+      }
+      else {
+        createBtn.addEventListener( "click", onCreateNextChapterClick, false );        
+      }
 
       if( seqTrackEvent !== undefined ) {
         $(newChapterItem).data("seqTrackEvent", seqTrackEvent);
-        label = seqTrackEvent.popcornOptions.title;
+        text = seqTrackEvent.popcornOptions.title;
 
         startBox = new TimeBox(
           $(newChapterItem).find(".toc-item-time-start"),
           seqTrackEvent.popcornOptions.start
         );
         chapterStart = seqTrackEvent.popcornOptions.start;
+        newPopcornOptions.start = seqTrackEvent.popcornOptions.start;
 
-        endBox = new TimeBox(
+        /*endBox = new TimeBox(
           $(newChapterItem).find(".toc-item-time-end"),
           seqTrackEvent.popcornOptions.end
-        );
+        );*/
 
         chapterEnd = seqTrackEvent.popcornOptions.end;
-        //TODO: set to seqTrackEvent.popcornOptions.start+CHAPTER_MARK
+        newPopcornOptions.end = seqTrackEvent.popcornOptions.end;
+        newPopcornOptions.viewEndTime = seqTrackEvent.popcornOptions.end;
       }
       else {
-        label = _count;
+        text = _count;
+
         _count++;
 
         // If first level chapter,
@@ -186,41 +215,72 @@ define([ "localized", "editor/editor", "editor/base-editor",
             chapterStart = lastMiddleTime;
             chapterEnd = chapterStart + CHAPTER_MARK;
 
-            if( chapterEnd >= endTime ) {
-              return;
-            }
+            newPopcornOptions.start = lastMiddleTime;
+            newPopcornOptions.end = lastMiddleTime + CHAPTER_MARK;
+            newPopcornOptions.viewEndTime = lastTrackEvent.popcornOptions.viewEndTime;
+
+            lastPopcornOptions.viewEndTime = lastMiddleTime - CHAPTER_INTERVAL;
+
           }
         }
         // Else find last chapter item in the target chapter list
         // and divide time of the last one
         else if( level >= 1 ) {
-          var lastChapterItem = $(chapterList).find("li").last();
+          var lastChapterItem = $(chapterList).find("li").last(),
+            lastPopcornOptions,
+            lastMiddleTime;
 
           if( lastChapterItem ) {
             var lastTrackEvent = lastChapterItem.data("trackEvent");
 
             if( lastTrackEvent ) {
-              var lastMiddleTime = (lastTrackEvent.popcornOptions.start + endTime )/2;
+              lastPopcornOptions = lastTrackEvent.popcornOptions;
+              lastMiddleTime = (lastTrackEvent.popcornOptions.start + endTime )/2;
+              
               chapterStart = lastMiddleTime;
               chapterEnd = chapterStart + CHAPTER_MARK;
+
+              newPopcornOptions.start = lastMiddleTime;
+              newPopcornOptions.end = lastMiddleTime + CHAPTER_MARK;
+              newPopcornOptions.viewEndTime = endTime;
+
+              lastPopcornOptions.viewEndTime = lastMiddleTime - CHAPTER_INTERVAL;
+              lastTrackEvent.update( lastPopcornOptions );
+              lastTrackEvent.view.update( lastPopcornOptions );
 
             }
 
           }
         }
 
+        // If calculated chapter end is superior to allowed
+        // chapter interval, prevent from creating it.
+        if( chapterEnd >= endTime ) {
+          return;
+        }
+
       }
 
-      $(newChapterItem).find( ".dd3-content" ).first().text( label );
+      var $content = $(newChapterItem).find( ".dd3-content" );
+      $content.first().text( text );
+      $content.attr("data-level", level)
+
+      //$(newChapterItem).data("level", level);
       
       _tocEditorDiv.classList.add("visible");
-      _clearBtn.classList.add("visible");
+      _removeTableBtn.classList.add("visible");
       chapterList.appendChild( newChapterItem );
 
       chapterStart = Math.round( chapterStart*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
       chapterEnd = Math.round( chapterEnd*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
 
-      createTrackEvent( newChapterItem, chapterStart, chapterEnd, label, level );
+      newPopcornOptions.start = Math.round( newPopcornOptions.start*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
+      newPopcornOptions.end = Math.round( newPopcornOptions.end*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
+
+      newPopcornOptions.text = text;
+      newPopcornOptions.level = level;
+
+      createTrackEvent( newChapterItem, chapterStart, chapterEnd, text, level, newPopcornOptions.viewEndTime );
       render();
 
       return newChapterItem;
@@ -278,11 +338,24 @@ define([ "localized", "editor/editor", "editor/base-editor",
       var $tocEditorItem = $( e.target.parentNode ),
         trackEvent = $tocEditorItem.data("trackEvent");
 
+      // Remove sub chapter track events
+      removeChapterTrackEvent( e.target.parentNode );
+
       if( trackEvent !== undefined && trackEvent.track) {
         trackEvent.track.removeTrackEvent(trackEvent);
       }
 
+      /*$tocEditorItem.find(">li").each(function() {
+        var trackEvent = $(this).data("trackEvent");
+      });*/
+
+
+      // Remove chapter track event
       $tocEditorItem.removeData("trackEvent");
+
+
+
+      // Remove chapter editor elements
       $tocEditorItem.remove();
     }
 
@@ -302,7 +375,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
       editorList.innerHTML = '';
       _tocEditorDiv.classList.remove("visible");
-      _clearBtn.classList.remove("visible");
+      _removeTableBtn.classList.remove("visible");
     }
 
     /*
@@ -401,8 +474,9 @@ define([ "localized", "editor/editor", "editor/base-editor",
           tocListItemLink.setAttribute("data-start", trackEvent.popcornOptions.start);
           tocListItemLink.setAttribute("data-end", trackEvent.popcornOptions.end);
           tocListItemLink.setAttribute("data-level", trackEvent.popcornOptions.level);
+          tocListItemLink.setAttribute("data-view-end-time", trackEvent.popcornOptions.viewEndTime);
           tocListItemLink.setAttribute("data-trackevent-id", trackEvent.id);
-          tocListItemLink.setAttribute("class", "toc-item-link");
+          //tocListItemLink.setAttribute("class", "toc-item-link");
           tocListItemLink.innerHTML = text;
 
           //$( tocListItemLink ).removeData("trackEvent");
@@ -495,7 +569,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
         return trackEvent;
     }
 
-    function createTrackEvent( item, start, end, text, level ) {
+    function createTrackEvent( item, start, end, text, level, viewEndTime ) {
       var popcornOptions = {},
           $item = $(item),
           trackEvent,
@@ -506,9 +580,10 @@ define([ "localized", "editor/editor", "editor/base-editor",
       popcornOptions.end   = end;
       popcornOptions.text  = text;
       popcornOptions.level = level;
+      popcornOptions.viewEndTime = viewEndTime;
 
       startBox = new TimeBox($item.find(".toc-item-time-start"));
-      endBox = new TimeBox($item.find(".toc-item-time-end"));
+      //endBox = new TimeBox($item.find(".toc-item-time-end"));
 
       trackEvent = generateSafeChapterTrackEvent( popcornOptions, _chapterTracks[level] );
 
@@ -639,17 +714,27 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
       if( tocList.length>0 ) {
         tocList.each(function() {
+          removeChapterTrackEvent( this );
           var trackEvent = $(this).data("trackEvent");
 
           if( trackEvent !== undefined ) {
-            // Add track event in the timeline
             trackEvent.track.removeTrackEvent( trackEvent );
           }
-          removeChapterTrackEvent( this );
         });
       }
     }
 
+    /**
+     * Update toc track event when media duration changed.
+     */
+    /*function onMediaDurationChanged( e ) {
+      if( _tocTrackEvent ) {
+        _tocOptions.start = 0;
+        _tocOptions.end = _media.duration;
+        _tocTrackEvent.update( _tocOptions );
+        _tocTrackEvent.view.update( _tocOptions );
+      }
+    }*/
 
     function createTocTrackEvent() {
       if( !_tocTrackEvent ) {
@@ -693,28 +778,33 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
       if($(_tocEditorList).children().length==0) {
         _tocEditorDiv.classList.remove("visible");
-        _clearBtn.classList.remove("visible");
+        _removeTableBtn.classList.remove("visible");
       }
     }
 
     function createTracks() {
-      _tocTrack = _media.addTrack();
-      _tocTrack.name = "Table";
+      _media.clear();
 
-      _chapterTracks[1] = _media.addTrack();
-      _chapterTracks[1].name = "Level 1";
+      _tocTrack = _media.addTrack(null, true, true);
+      //_tocTrack.name = "Table";
 
-      _chapterTracks[2] = _media.addTrack();
-      _chapterTracks[2].name = "Level 2";
+      _chapterTracks[3] = _media.addTrack(null, true);
+      //_chapterTracks[3].name = "Level 3";
 
-      _chapterTracks[3] = _media.addTrack();
-      _chapterTracks[3].name = "Level 3";
+      _chapterTracks[2] = _media.addTrack(null, true);
+      //_chapterTracks[2].name = "Level 2";
+
+      _chapterTracks[1] = _media.addTrack(null, true);
+      //_chapterTracks[1].name = "Level 1";
+
+      // Let a blank track for media
+      _mediaTrack = _media.addTrack(null, true);
     }
 
     function setup() {
-      _createChapterBtn.addEventListener( "click", onCreateChapterClick, false);
-      _clearBtn.addEventListener( "click", onClearBtnClick, false);
-      _renderBtn.addEventListener( "click", render, false );
+      _createTableBtn.addEventListener( "click", onCreateTableBtnClick, false);
+      _removeTableBtn.addEventListener( "click", onRemoveTableBtnClick, false);
+      //_renderBtn.addEventListener( "click", render, false );
 
       _media.listen( "trackeventremoved", onMediaTrackEventRemoved );
       _media.listen( "sequencetrackadded", onSequenceTrackAdded );
@@ -811,7 +901,6 @@ define([ "localized", "editor/editor", "editor/base-editor",
         if( tocItemLink[0] == "A") {
           var chapterItem = CHAPTER_ITEM.cloneNode( true ),
             $chapterItem = $(chapterItem),
-            dragBtn = chapterItem.querySelector( ".toc-item-handle" ),
             contentDiv = chapterItem.querySelector( ".toc-item-content" ),
             deleteBtn = chapterItem.querySelector( ".toc-item-delete" ),
             trackEvent,
@@ -836,7 +925,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
           deleteBtn.addEventListener( "click", onDeleteBtnClick, false );
 
           _tocEditorDiv.classList.add("visible");
-          _clearBtn.classList.add("visible");
+          _removeTableBtn.classList.add("visible");
 
           var label = trackEvent.popcornOptions.text;
           $(chapterItem).find(".dd3-content").first().text( label );
@@ -844,7 +933,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
           parentEditorList.appendChild( chapterItem );
 
           startBox = new TimeBox( $chapterItem.find(".toc-item-time-start") );
-          endBox = new TimeBox( $chapterItem.find(".toc-item-time-end") );
+          //endBox = new TimeBox( $chapterItem.find(".toc-item-time-end") );
 
           // Listen to updates on track event
           trackEvent.listen( "trackeventupdated", onTrackEventUpdated );
@@ -873,7 +962,11 @@ define([ "localized", "editor/editor", "editor/base-editor",
         _media = butter.currentMedia;
         _this = this;
 
-        $('#toc-div').nestable({"maxDepth":CHAPTER_MAX_LEVEL, "group":1});
+        _createTableBtn.classList.add("visible");
+        //_media.listen("mediacontentchanged", onMediaDurationChanged );
+
+        // Nestable table of contents now de-activated
+        //$('#toc-div').nestable({"maxDepth":CHAPTER_MAX_LEVEL, "group":1});
 
         $('#toc-div').on('keypress', '.toc-item-content[contenteditable]',
         function(event) {

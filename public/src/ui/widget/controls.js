@@ -131,7 +131,7 @@ define( [ "util/lang", "util/time", "util/sanitizer", "text!layouts/controls.htm
       controlsFullscreen.addEventListener( "click", onFullscreenClick, false );
       //controlsLogo.addEventListener( "click", onLogoClick, false );
 
-      var tocLinks = htmlToc.querySelectorAll(".toc-item-link"),
+      var tocLinks = htmlToc.querySelectorAll("a");//.toc-item-link"),
         h1Count = 0,
         h2Count = 0,
         h3Count = 0;
