@@ -226,7 +226,7 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop",
         set: function( val ){
           _parent = val;
 
-          if( _type == "chapter" ) {
+          if( _type == "chapter" || _type == "toc") {
             return;
           }
 

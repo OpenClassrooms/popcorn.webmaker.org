@@ -114,9 +114,9 @@
         }
       };
 
-      function ensureNewTrackIsTrack( track, ghost ) {
+      function ensureNewTrackIsTrack( track, visible ) {
         if ( !( track instanceof Track ) ) {
-          track = new Track( track, ghost );
+          track = new Track( track, visible );
         }
         return track;
       }
@@ -144,13 +144,13 @@
         }
       }
 
-      this.addTrack = function ( track, forceFirst, ghost ) {
+      this.addTrack = function ( track, forceFirst, visible ) {
 
         if ( forceFirst && _orderedTracks[ 0 ] ) {
-          return _this.insertTrackBefore( _orderedTracks[ 0 ], null, ghost );
+          return _this.insertTrackBefore( _orderedTracks[ 0 ], null, visible );
         }
 
-        track = ensureNewTrackIsTrack( track, ghost );
+        track = ensureNewTrackIsTrack( track, visible );
 
         if ( track._media ) {
           throw "Track already belongs to a Media object. Use `media.removeTrack` prior to this function.";
@@ -159,9 +159,7 @@
         // Give new track last order since it's newest
         track.order = _tracks.length;
 
-        if( !ghost ) {
-          setupNewTrack( track );
-        }
+        setupNewTrack( track );
 
         // Simply add the track onto the ordered tracks array
         _orderedTracks.push( track );
@@ -174,8 +172,8 @@
         return track;
       };
 
-      this.insertTrackBefore = function( otherTrack, newTrack, ghost ) {
-        newTrack = ensureNewTrackIsTrack( newTrack, ghost );
+      this.insertTrackBefore = function( otherTrack, newTrack, visible ) {
+        newTrack = ensureNewTrackIsTrack( newTrack, visible );
 
         if ( newTrack._media ) {
           throw "Track already belongs to a Media object. Use `media.removeTrack` prior to this function.";
@@ -206,8 +204,8 @@
         }
       };
 
-      this.insertTrackAfter = function( otherTrack, newTrack ) {
-        newTrack = ensureNewTrackIsTrack( newTrack );
+      this.insertTrackAfter = function( otherTrack, newTrack, visible ) {
+        newTrack = ensureNewTrackIsTrack( newTrack, visible );
 
         if ( newTrack._media ) {
           throw "Track already belongs to a Media object. Use `media.removeTrack` prior to this function.";

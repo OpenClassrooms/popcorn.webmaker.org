@@ -98,6 +98,10 @@ define( [ "dialog/dialog", "util/dragndrop", "util/lang", "text!layouts/track-ha
           menuDiv = trackDiv.querySelector( ".menu" ),
           deleteButton = menuDiv.querySelector( ".delete" );
 
+      /*if( !track.visible ) {
+        return;
+      }*/
+
       deleteButton.addEventListener( "click", function() {
         var dialog = Dialog.spawn( "delete-track", {
           data: track.name,

@@ -159,9 +159,9 @@ window.Butter = {
           end = _currentMedia.duration;
         }
 
-        if( type === "toc" ) {
+        /*if( type === "toc" ) {
           end = 0;
-        }
+        }*/
 
         if ( !_defaultTarget ) {
           console.warn( "No targets to drop events!" );

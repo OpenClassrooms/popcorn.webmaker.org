@@ -340,6 +340,11 @@ define( [ "util/time" ],
         evalBookmarkPosition( _currentBookmark );
       }
 
+      // Magnetism on node
+      if( Math.abs( currentTime - _media.currentTime ) < CHAPTER_MOVE_MAGNET ) {
+        _currentBookmark.time = _media.currentTime;
+      }
+
 
       //_tocTooltip.classList.add( "tooltip-no-transition-on" );
 

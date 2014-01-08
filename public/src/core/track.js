@@ -9,7 +9,7 @@ define( [ "localized", "./eventmanager", "./trackevent", "./views/track-view", "
       NAME_PREFIX = Localized.get( "Layer" ) + " ",
       Track;
 
-  Track = function( options, isGhost ) {
+  Track = function( options, visible ) {
     options = options || {};
 
     var _trackEvents = [],
@@ -20,7 +20,11 @@ define( [ "localized", "./eventmanager", "./trackevent", "./views/track-view", "
         _this = this,
         _order = 0,
         _name = NAME_PREFIX + _order,
-        _isGhost = isGhost || false;
+        _visible = true;
+
+    if( !visible ) {
+      _visible = false;
+    }
 
     _this._media = null;
 
@@ -138,13 +142,13 @@ define( [ "localized", "./eventmanager", "./trackevent", "./views/track-view", "
           _name = NAME_PREFIX + val;
         }
       },
-      ghost: {
+      visible: {
         enumerable: true,
         get: function() {
-          return _isGhost;
+          return _visible;
         },        
         set: function( val ) {
-          _isGhost = val;
+          _visible = val;
         }
       }
     });

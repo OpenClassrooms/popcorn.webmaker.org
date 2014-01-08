@@ -34,6 +34,9 @@ define( [ "core/logger", "util/dragndrop", "./ghost-manager" ],
       var orderedTracks = e.data;
       for ( var i = 0, l = orderedTracks.length; i < l; ++i ) {
         var trackElement = orderedTracks[ i ].view.element;
+        /*if( !orderedTracks[ i ].visible ) {
+          continue;
+        }*/
         if ( trackElement !== _container.childNodes[ i ] ) {
           _container.insertBefore( trackElement, _container.childNodes[ i ] || null );
         }
@@ -135,9 +138,9 @@ define( [ "core/logger", "util/dragndrop", "./ghost-manager" ],
       for ( var i = 0, il = tracks.length; i < il; ++i ) {
         var trackView = tracks[ i ].view;
 
-        if( !tracks[ i ].ghost ) {
+        //if( tracks[ i ].visible ) {
           _container.appendChild( trackView.element );
-        }
+        //}
         trackView.duration = _media.duration;
         trackView.parent = _this;
       }
@@ -154,9 +157,9 @@ define( [ "core/logger", "util/dragndrop", "./ghost-manager" ],
 
       trackView.listen( "trackeventdropped", onTrackEventDropped );
 
-      if( !e.data.ghost ) {
+      //if( e.data.visible ) {
         _container.appendChild( trackView.element );        
-      }
+      //}
       
       trackView.duration = _media.duration;
       trackView.parent = _this;

@@ -192,8 +192,8 @@ define([ "localized", "editor/editor", "editor/base-editor",
           seqTrackEvent.popcornOptions.end
         );*/
 
-        chapterEnd = seqTrackEvent.popcornOptions.end;
-        newPopcornOptions.end = seqTrackEvent.popcornOptions.end;
+        chapterEnd = seqTrackEvent.popcornOptions.start + CHAPTER_MARK;
+        newPopcornOptions.end = seqTrackEvent.popcornOptions.start + CHAPTER_MARK;
         newPopcornOptions.viewEndTime = seqTrackEvent.popcornOptions.end;
       }
       else {
@@ -201,31 +201,8 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
         _count++;
 
-        // If first level chapter,
-        // split last first level chapter with the new one
-        if( level == 1 ) {
-          var lastTrackEvent = _chapterTracks[level].getLastTrackEvent(),
-            lastPopcornOptions,
-            lastMiddleTime;
-
-          if ( lastTrackEvent ) {
-            lastPopcornOptions = lastTrackEvent.popcornOptions;
-            lastMiddleTime = ( lastPopcornOptions.start + endTime )/2;
-
-            chapterStart = lastMiddleTime;
-            chapterEnd = chapterStart + CHAPTER_MARK;
-
-            newPopcornOptions.start = lastMiddleTime;
-            newPopcornOptions.end = lastMiddleTime + CHAPTER_MARK;
-            newPopcornOptions.viewEndTime = lastTrackEvent.popcornOptions.viewEndTime;
-
-            lastPopcornOptions.viewEndTime = lastMiddleTime - CHAPTER_INTERVAL;
-
-          }
-        }
-        // Else find last chapter item in the target chapter list
-        // and divide time of the last one
-        else if( level >= 1 ) {
+        // Find last chapter item in the chapters list
+        // and divide time of the last one.
           var lastChapterItem = $(chapterList).find("li").last(),
             lastPopcornOptions,
             lastMiddleTime;
@@ -242,7 +219,13 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
               newPopcornOptions.start = lastMiddleTime;
               newPopcornOptions.end = lastMiddleTime + CHAPTER_MARK;
-              newPopcornOptions.viewEndTime = endTime;
+
+              if( level == 1 ) {
+                newPopcornOptions.viewEndTime = lastTrackEvent.popcornOptions.viewEndTime;
+              }
+              else if( level >= 1 ) {
+                newPopcornOptions.viewEndTime = endTime;
+              }
 
               lastPopcornOptions.viewEndTime = lastMiddleTime - CHAPTER_INTERVAL;
               lastTrackEvent.update( lastPopcornOptions );
@@ -251,7 +234,6 @@ define([ "localized", "editor/editor", "editor/base-editor",
             }
 
           }
-        }
 
         // If calculated chapter end is superior to allowed
         // chapter interval, prevent from creating it.
@@ -279,6 +261,10 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
       newPopcornOptions.text = text;
       newPopcornOptions.level = level;
+
+      if( !_chapterTracks[level] ) {
+        _chapterTracks[level] = _media.insertTrackBefore( _tocTrack );
+      }
 
       createTrackEvent( newChapterItem, chapterStart, chapterEnd, text, level, newPopcornOptions.viewEndTime );
       render();
@@ -435,7 +421,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
       if( trackEvent !== undefined ) {
         popcornOptions.start = TimeUtils.toSeconds( $element.find(".toc-item-time-start input").val() );
-        popcornOptions.end   = TimeUtils.toSeconds( $element.find(".toc-item-time-end input").val() );
+        popcornOptions.end   = popcornOptions.start + CHAPTER_MARK;
         popcornOptions.text  = $element.find(".toc-item-content:first").text();
         popcornOptions.level = ($element.parentsUntil("#toc-ol").length)/2+1;
         trackEvent.update( popcornOptions, true );
@@ -785,20 +771,21 @@ define([ "localized", "editor/editor", "editor/base-editor",
     function createTracks() {
       _media.clear();
 
-      _tocTrack = _media.addTrack(null, true, true);
-      //_tocTrack.name = "Table";
-
-      _chapterTracks[3] = _media.addTrack(null, true);
-      //_chapterTracks[3].name = "Level 3";
-
-      _chapterTracks[2] = _media.addTrack(null, true);
-      //_chapterTracks[2].name = "Level 2";
-
-      _chapterTracks[1] = _media.addTrack(null, true);
-      //_chapterTracks[1].name = "Level 1";
-
       // Let a blank track for media
       _mediaTrack = _media.addTrack(null, true);
+
+      _tocTrack = _media.insertTrackAfter(_mediaTrack, null, false);
+      //_tocTrack.name = "Table";
+
+      //_chapterTracks[3] = _media.addTrack(null, true);
+      //_chapterTracks[3].name = "Level 3";
+
+      //_chapterTracks[2] = _media.addTrack(null, true);
+      //_chapterTracks[2].name = "Level 2";
+
+      //_chapterTracks[1] = _media.addTrack(null, true);
+      //_chapterTracks[1].name = "Level 1";
+
     }
 
     function setup() {
