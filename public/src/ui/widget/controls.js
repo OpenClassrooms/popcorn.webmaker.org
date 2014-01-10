@@ -172,7 +172,7 @@ define( [ "util/lang", "util/time", "util/sanitizer", "text!layouts/controls.htm
         
         tocLink.innerHTML = Sanitizer.reconstituteHTML( tocLink.innerHTML );
 
-        var end = tocLink.getAttribute('data-end'),
+        var end = tocLink.getAttribute('data-view-end-time'),
           start = tocLink.getAttribute('data-start'),
           level = tocLink.getAttribute('data-level');
 

@@ -388,18 +388,18 @@ define( [ "util/time" ],
         _currentBookmark.trackEvent.popcornOptions.start = _currentBookmark.time;
         _currentBookmark.trackEvent.popcornOptions.end = _currentBookmark.time + CHAPTER_MARK;
 
-        _currentBookmark.trackEvent.dispatch("trackeventupdated", _currentBookmark.trackEvent);
         _currentBookmark.trackEvent.update( _currentBookmark.trackEvent.popcornOptions );
         _currentBookmark.trackEvent.view.update( _currentBookmark.trackEvent.popcornOptions );
+        _currentBookmark.trackEvent.dispatch("trackeventupdated", _currentBookmark.trackEvent);
 
         for (var i = 0; i < allPrevBookmarks.length; ++i) {
           var b = allPrevBookmarks[i];
 
           b.trackEvent.popcornOptions.viewEndTime = _currentBookmark.time;
 
-          b.trackEvent.dispatch("trackeventupdated", b.trackEvent);
           b.trackEvent.update( b.trackEvent.popcornOptions );
           b.trackEvent.view.update( b.trackEvent.popcornOptions );
+          b.trackEvent.dispatch("trackeventupdated", b.trackEvent);
 
         }
 

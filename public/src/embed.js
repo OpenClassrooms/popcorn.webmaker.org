@@ -527,11 +527,13 @@ function init() {
       var end = tocLink.getAttribute('data-end'),
         start = tocLink.getAttribute('data-start'),
         level = tocLink.getAttribute('data-level'),
+        viewEndTime = tocLink.getAttribute('data-view-end-time'),
         tocItem = {};
 
       // Set data. Usefull to display tooltips of current chapter.
-      tocItem.end = parseFloat( end );
       tocItem.start = parseFloat( start );
+      tocItem.end = parseFloat( viewEndTime );
+      tocItem.viewEndTime = parseFloat( viewEndTime );
       tocItem.level = parseFloat( level );
       tocItem.link = tocLink;
 
@@ -600,7 +602,7 @@ function init() {
       if( $( h1Chapter ).parent().children().length == 1 ) {
         titles.push( h1Chapter.innerHTML );
         addTooltip( h1Chapter.getAttribute("data-start"),
-          h1Chapter.getAttribute("data-end"),
+          h1Chapter.getAttribute("data-view-end-time"),
           h1Count,
           titles );
       }
@@ -612,7 +614,7 @@ function init() {
         if( $( h2Chapter ).parent().children().length == 1 ) {
           titles.push( h2Chapter.innerHTML );
           addTooltip( h2Chapter.getAttribute("data-start"),
-            h2Chapter.getAttribute("data-end"),
+            h2Chapter.getAttribute("data-view-end-time"),
             h1Count,
             titles );          
           titles = [];
@@ -626,7 +628,7 @@ function init() {
           titles.push( h3Chapter.innerHTML );
 
           addTooltip( h3Chapter.getAttribute("data-start"),
-            h3Chapter.getAttribute("data-end"),
+            h3Chapter.getAttribute("data-view-end-time"),
             h1Count,
             titles );
 
