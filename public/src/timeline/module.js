@@ -25,10 +25,6 @@ define( [
       onModuleReady();
     };
 
-    this.getCurrentTrackWidth = function() {
-      return _currentMedia.trackContainer.getTrackWidth();
-    };
-
     butter.listen( "mediaadded", function( event ){
       var mediaObject = event.data,
           media = new Media( butter, mediaObject );
@@ -48,21 +44,15 @@ define( [
         }
       }
 
-      function mediaRemoved( event ){
-        var mediaObject = event.data;
-        if( _media[ mediaObject.id ] ){
-          _media[ mediaObject.id ].destroy();
-        }
-        delete _media[ mediaObject.id ];
-        if( _currentMedia && ( mediaObject.id === _currentMedia.media.id ) ){
-          _currentMedia = undefined;
-        }
-        butter.unlisten( "mediachanged", mediaChanged );
-        butter.unlisten( "mediaremoved", mediaRemoved );
-      } //mediaRemoved
-
       butter.listen( "mediachanged", mediaChanged );
-      butter.listen( "mediaremoved", mediaRemoved );
+    });
+    Object.defineProperties( this, {
+      media: {
+        enumerable: true,
+        get: function() {
+          return _currentMedia;
+        }
+      }
     });
 
   }; //Timeline

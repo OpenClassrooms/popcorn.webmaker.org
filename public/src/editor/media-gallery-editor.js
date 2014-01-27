@@ -2,9 +2,11 @@
  * If a copy of the MIT license was not distributed with this file, you can
  * obtain one at https://raw.github.com/mozilla/butter/master/LICENSE */
 
-define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/mediatypes", "editor/editor",
- "util/time", "util/dragndrop", "l10n!/layouts/media-editor.html", "json!/api/butterconfig" ],
-  function( Localized, LangUtils, URI, XHR, KeysUtils, MediaUtils, Editor, Time, DragNDrop, EDITOR_LAYOUT, CONFIG ) {
+define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/mediatypes",
+  "editor/editor",
+ "util/time", "util/dragndrop", "l10n!/layouts/media-editor.html", "text!/api/butterconfig" ],
+  function( Localized, LangUtils, URI, XHR, KeysUtils, MediaUtils, Editor,
+    Time, DragNDrop, EDITOR_LAYOUT, CONFIG ) {
 
   var _parentElement =  LangUtils.domFragment( EDITOR_LAYOUT, ".media-editor" ),
       _addMediaPanel = _parentElement.querySelector( ".add-media-panel" ),
@@ -109,7 +111,10 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
 
   function addPhotoEvent( popcornOptions ) {
     _butter.deselectAllTrackEvents();
-    _butter.generateSafeTrackEvent( "image", popcornOptions );
+    _butter.generateSafeTrackEvent({
+      type: "image",
+      popcornOptions: popcornOptions
+    });
   }
 
   function addPhotos( data, options ) {
@@ -138,8 +143,12 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
 
     if ( data.type === "Flickr" ) {
       iconSource += "flickr-black.png";
-    } else {
+    } else if ( data.type === "Giphy" ) {
       iconSource += "giphy.png";
+    } else {
+      data.type = "Image";
+      el.querySelector( ".mg-type > img" ).classList.add( "butter-hidden" );
+      el.querySelector( ".mg-type-text" ).classList.remove( "photo" );
     }
 
     el.querySelector( ".mg-type > img" ).src = iconSource;
@@ -184,7 +193,10 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
 
   function addMediaEvent( popcornOptions ) {
     _butter.deselectAllTrackEvents();
-    _butter.generateSafeTrackEvent( "sequencer", popcornOptions );
+    _butter.generateSafeTrackEvent({
+      type: "sequencer",
+      popcornOptions: popcornOptions
+    });
   }
 
   function updateDuration( val ) {
@@ -235,8 +247,10 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
       end: data.duration,
       from: data.from || 0,
       title: data.title,
+      type: data.type,
       thumbnailSrc: thumbnailSrc,
       duration: data.duration,
+      contentType: data.contentType,
       hidden: data.hidden
     });
 
@@ -278,37 +292,23 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
     function addEvent() {
       var start = _butter.currentTime,
           end = start + data.duration,
-          playWhenReady = false,
-          trackEvent,
           popcornOptions = {
             source: URI.makeUnique( data.source ).toString(),
             denied: data.denied,
             start: start,
             end: end,
+            type: data.type,
             thumbnailSrc: thumbnailSrc,
             from: data.from || 0,
             title: data.title,
             duration: data.duration,
             linkback: data.linkback,
+            contentType: data.contentType,
             hidden: data.hidden || false
           };
 
       options.callback = options.callback || addMediaEvent;
-
-      if ( end > _media.duration ) {
-        _butter.listen( "mediaready", function onMediaReady() {
-          _butter.unlisten( "mediaready", onMediaReady );
-          if ( playWhenReady ) {
-            _media.play();
-          }
-          options.callback( popcornOptions, data );
-        });
-
-        playWhenReady = !_media.paused;
-        _media.url = "#t=," + end;
-      } else {
-        options.callback( popcornOptions, data );
-      }
+      options.callback( popcornOptions, data );
     }
 
     thumbnailBtn.addEventListener( "click", addEvent, false );
@@ -334,12 +334,21 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
       setTimeout(function() {
         el.classList.remove( "new" );
       }, TRANSITION_TIME );
-
-      addMedia( data, {
-        element: el,
-        container: _galleryList,
-        remove: true
-      });
+      if ( data.type === "image" ) {
+        el = LangUtils.domFragment( EDITOR_LAYOUT, ".media-gallery-item.gallery-photo" );
+        el.classList.remove( "gallery-item-grid" );
+        addPhotos( data, {
+          container: _galleryList,
+          element: el,
+          remove: true
+        });
+      } else {
+        addMedia( data, {
+          element: el,
+          container: _galleryList,
+          remove: true
+        });
+      }
     } else {
       onDenied( Localized.get( "Your gallery already has that media added to it" ) );
     }
@@ -430,11 +439,17 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
   }
 
   function formatSource( value ) {
-    return !value ? "" : value.trim().split( " " ).join( "" );
-  }
+    if ( !value ) {
+      return "";
+    }
 
-  function onBlur( e ) {
-    e.preventDefault();
+    /*var split = value.split( "?" ),
+        querystring = split[ 1 ];
+
+    value = split[ 0 ].trim();
+
+    return querystring ? value + "?" + querystring : value;*/
+    return value;
   }
 
   function onAddMediaClick() {
@@ -697,6 +712,11 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
     });
 
     function addTrackEvent(data) {
+      var options = {};
+      options.type = "sequencer";
+      options.track = _mediaTrack;
+
+
       var popcornOptions = {
         source: URI.makeUnique( data.source ).toString(),
         denied: data.denied,
@@ -708,7 +728,9 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
         hidden: data.hidden || false
       };
 
-      trackEvent = _butter.generateSafeTrackEvent( "sequencer", popcornOptions, _mediaTrack );
+      options.popcornOptions = popcornOptions;
+
+      trackEvent = _butter.generateSafeTrackEvent( options );
 
       if(!_mediaTrack) {
         _mediaTrack = trackEvent.track;
@@ -785,7 +807,7 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
       }
     }, false );
 
-    _projectTab.addEventListener( "mouseup", function( e ) {
+    _projectTab.addEventListener( "mouseup", function() {
       if ( !_projectTab.classList.contains( "butter-active" ) ) {
         _searchTab.classList.remove( "butter-active" );
         _projectTab.classList.add( "butter-active" );
@@ -806,7 +828,7 @@ define( [ "localized", "util/lang", "util/uri", "util/xhr", "util/keys", "util/m
       }
     });
 
-    _searchTab.addEventListener( "mouseup", function( e ) {
+    _searchTab.addEventListener( "mouseup", function() {
       if ( !_searchTab.classList.contains( "butter-active" ) ) {
         var container = _itemContainers[ _currentSearch ];
 

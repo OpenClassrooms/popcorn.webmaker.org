@@ -3,14 +3,8 @@
  * obtain one at https://raw.github.com/mozilla/butter/master/LICENSE */
 /*jshint evil:true*/
 
-define( [
-          "localized", "core/logger", "core/eventmanager", "util/uri",
-          "util/warn", "../../external/PluginDetect/PluginDetect_Flash"
-        ],
-        function(
-          Localized, Logger, EventManager, URI,
-          Warn, PluginDetect
-        ){
+define( [ "localized", "core/logger", "core/eventmanager", "util/uri", "util/accepted-flash" ],
+        function( Localized, Logger, EventManager, URI, FLASH ) {
 
   // regex to determine the type of player we need to use based on the provided url
   var __urlRegex = /(?:http:\/\/www\.|http:\/\/|www\.|\.|^)(youtu|vimeo|soundcloud|baseplayer)/;
@@ -21,10 +15,6 @@ define( [
       PLAYER_WAIT_DURATION = 10000,
       // timeout duration to wait for media to be ready
       MEDIA_WAIT_DURATION = 10000;
-
-  // Hard coded value for now. We need to chat with whoever is in charge of Mozilla's
-  // PFS2 instance to see if we can use the service / what limitations there might be
-  var MIN_FLASH_VERSION = 11;
 
   /* The Popcorn-Wrapper wraps various functionality and setup associated with
    * creating, updating, and removing associated data with Popcorn.js.
@@ -231,8 +221,8 @@ define( [
     function findMediaType( url ){
       var regexResult = __urlRegex.exec( url ),
           // if the regex didn't return anything we know it's an HTML5 source
-          mediaType = "object",
-          flashVersion;
+          mediaType = "object";
+
       if ( regexResult ) {
 
         mediaType = regexResult[ 1 ];
@@ -243,10 +233,7 @@ define( [
 
         if ( !_checkedFlashVersion ) {
           _checkedFlashVersion = true;
-          flashVersion = PluginDetect.getVersion( "Flash" );
-          if ( flashVersion && +flashVersion.split( "," )[ 0 ] < MIN_FLASH_VERSION ) {
-            Warn.showWarning( Localized.get( "flashWarning" ) + " " + Localized.get( "Click to remove warning" ) );
-          }
+          FLASH.warn();
         }
       }
       return mediaType;
@@ -527,68 +514,6 @@ define( [
     this.pause = function(){
       if ( _mediaReady && !_popcorn.paused() ) {
         _popcorn.pause();
-      }
-    };
-
-    // XXX: SoundCloud has a bug (reported by us, but as yet unfixed) which blocks
-    // loading of a second iframe/player if the iframe for the first is removed
-    // from the DOM.  We can simply move old ones to a quarantine div, hidden from
-    // the user for now (see #2630).  We lazily create and memoize the instance.
-    function getSoundCloudQuarantine() {
-      if ( getSoundCloudQuarantine.instance ) {
-        return getSoundCloudQuarantine.instance;
-      }
-
-      var quarantine = document.createElement( "div" );
-      quarantine.style.width = "0px";
-      quarantine.style.height = "0px";
-      quarantine.style.overflow = "hidden";
-      quarantine.style.visibility = "hidden";
-      document.body.appendChild( quarantine );
-
-      getSoundCloudQuarantine.instance = quarantine;
-      return quarantine;
-    }
-
-    // Wipe the current Popcorn instance and anything it created
-    this.clear = function( container ) {
-      if ( typeof( container ) === "string" ) {
-        container = document.getElementById( container );
-      }
-      if ( !container ) {
-        _logger.log( "Warning: tried to clear media with null target." );
-        return;
-      }
-
-      function isSoundCloud( p ) {
-        return !!(
-          p.media       &&
-          p.media._util &&
-          p.media._util.type === "SoundCloud" );
-      }
-
-      if ( _popcorn ) {
-        if ( isSoundCloud( _popcorn ) ) {
-          // XXX: pull the SoundCloud iframe element out of our video div, and quarantine
-          // so we don't delete it, and block loading future SoundCloud instances. See above.
-          var soundCloudParent = _popcorn.media.parentNode,
-              soundCloudIframe = soundCloudParent.querySelector( "iframe" );
-          if ( soundCloudIframe ) {
-            getSoundCloudQuarantine().appendChild( soundCloudIframe );
-          }
-        }
-        _this.unbind();
-      }
-
-      // Tear-down old instances, special-casing SoundCloud removal, see above.
-      while( container.firstChild ) {
-        container.removeChild( container.firstChild );
-      }
-
-      if ( [ "AUDIO", "VIDEO" ].indexOf( container.nodeName ) > -1 ) {
-        container.currentSrc = "";
-        container.src = "";
-        container.removeAttribute( "src" );
       }
     };
 

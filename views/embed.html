@@ -8,8 +8,12 @@
     <meta name="viewport" content="width=device-width">
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="/external/jwplayer.js"></script>
+
     <script src="/external/jsonml/jsonml-html.js"></script>
     <script src="/external/jsonml/jsonml-dom.js"></script>
+
+    <link rel="stylesheet" href="/static/bower/font-awesome/css/font-awesome.min.css">
+
     {{popcorn}}
     <link rel="stylesheet" href="/templates/basic/style.css">
     <link rel="stylesheet" href="/css/transitions.css">
@@ -36,12 +40,12 @@
   </head>
   <body class="embed">
     <div id="container" class="container">
-      <div id="video-container" class="video video-container">
+      <div id="video-container" class="video-container">
         <div id="video" class="video" style="background: {{background}}"></div>
       </div>
     </div>
     <div id="thumbnail-container" style="background: {{background}}" class="preload">
-      <img src="{{thumbnail}}" class="project-thumbnail">
+      <div style="background-image: url({{thumbnail}})" class="background-image"></div>
     </div>
     <div class="loading-message"></div>
     <div id="controls-big-play-button" class="hide-button"></div>
@@ -51,7 +55,11 @@
           <div class="embed-project">
             <div>
               <div class="embed-title">{{title | safe }}</div>
-              <div class="embed-author">{{author}}</div>
+              {% if author %}
+                <div class="embed-author">
+                  <a href="{{webmakerURL}}/{{localeInfo.lang}}/u/{{author}}" target="_blank">{{author}}</a>
+                </div>
+              {% endif %}
             </div>
             <div class="post-roll-description">{{description | safe }}
               <br>
@@ -102,7 +110,9 @@
       <div id="attribution-details" class="attribution-details"><span class="attribution-close"></span>
         <div class="attribution-title">{{title | safe}}</div>
         {% if author %}
-          <div class="attribution-author">{{author}}</div>
+          <div class="attribution-author">
+            <a href="{{webmakerURL}}/{{localeInfo.lang}}/u/{{author}}" target="_blank">{{author}}</a>
+          </div>
         {% endif %}
         <div class="attribution-content"></div>
       </div>

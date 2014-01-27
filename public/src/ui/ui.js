@@ -2,16 +2,18 @@
  * If a copy of the MIT license was not distributed with this file, you can
  * obtain one at https://raw.github.com/mozilla/butter/master/LICENSE */
 
-define( [ "core/eventmanager", "./toggler",
-          "./header", "./unload-dialog", "crashreporter",
+define( [ "core/eventmanager", "./header",
+          "./unload-dialog", "crashreporter",
           "first-run", "./tray", "editor/ui-kit",
           "core/trackevent", "dialog/dialog",
-          "util/dragndrop", "localized", "make-api", "json!/api/butterconfig" ],
-  function( EventManager, Toggler, Header,
+          "util/dragndrop", "make-api",
+          "./resizeHandler", "text!/api/butterconfig" ],
+  function( EventManager, Header,
             UnloadDialog, CrashReporter,
             FirstRun, Tray, UIKitDummy,
             TrackEvent, Dialog,
-            DragNDrop, Localized, Make, config ){
+            DragNDrop, Make,
+            ResizeHandler, config ){
 
   var TRANSITION_DURATION = 500,
       BUTTER_CSS_FILE = "{css}/butter.ui.css";
@@ -33,10 +35,11 @@ define( [ "core/eventmanager", "./toggler",
 
   function UI( butter ){
 
-    var _visibility = true,
-        _uiConfig = butter.config,
+    var _uiConfig = butter.config,
         _uiOptions = _uiConfig.value( "ui" ),
         _unloadDialog,
+        _resizeHandler,
+        _bodyWrapper = document.querySelector( ".body-wrapper" ),
         _this = this;
 
     // Top-level way to test our crash reporter.
@@ -52,12 +55,6 @@ define( [ "core/eventmanager", "./toggler",
     // Filled in by the editor module
     this.editor = null;
 
-    var _toggler = new Toggler( this.tray.rootElement.querySelector( ".butter-toggle-button" ),
-        function () {
-          butter.ui.visible = !butter.ui.visible;
-          _toggler.state = !_toggler.state;
-        }, Localized.get( "Show/Hide Timeline" ) );
-
     if ( _uiOptions.enabled ) {
       if ( _uiOptions.onLeaveDialog ) {
         _unloadDialog = new UnloadDialog( butter );
@@ -65,6 +62,12 @@ define( [ "core/eventmanager", "./toggler",
       document.body.classList.add( "butter-header-spacing" );
       document.body.classList.add( "butter-tray-spacing" );
     }
+
+    _bodyWrapper.addEventListener( "mousedown", function() {
+      if( butter.selectedEvents.length ) {
+        butter.deselectAllTrackEvents();
+      }
+    }, false );
 
     this.loadIcons = function( plugins ) {
       var path, img, div;
@@ -84,7 +87,6 @@ define( [ "core/eventmanager", "./toggler",
           // invisible, and thus not load.  Opera also requires
           // the image be in the DOM before it will load.
           div = document.createElement( "div" );
-          div.setAttribute( "data-butter-exclude", "true" );
           div.className = "butter-image-preload";
 
           div.appendChild( img );
@@ -352,23 +354,6 @@ define( [ "core/eventmanager", "./toggler",
         get: function() {
           return _uiOptions.enabled;
         }
-      },
-      visible: {
-        enumerable: true,
-        get: function(){
-          return _visibility;
-        },
-        set: function( val ){
-          if( _visibility !== val ){
-            _visibility = val;
-            if( _visibility ){
-              this.tray.minimized = false;
-            }
-            else {
-              this.tray.minimized = true;
-            }
-          }
-        }
       }
     });
 
@@ -540,7 +525,6 @@ define( [ "core/eventmanager", "./toggler",
           // If we have one track event just delete it, otherwise display a warning dialog.
           if ( selectedEvents.length === 1 ) {
             selectedEvent = selectedEvents[ 0 ];
-            butter.editor.closeTrackEventEditor( selectedEvent );
             selectedEvent.track.removeTrackEvent( selectedEvent );
             return;
           }
@@ -552,7 +536,6 @@ define( [ "core/eventmanager", "./toggler",
               submit: function() {
                 for( i = 0; i < l; i++ ) {
                   selectedEvent = selectedEvents[ i ];
-                  butter.editor.closeTrackEventEditor( selectedEvent );
                   selectedEvent.track.removeTrackEvent( selectedEvent );
                 }
                 dialog.close();
@@ -659,41 +642,13 @@ define( [ "core/eventmanager", "./toggler",
 
     this.TRANSITION_DURATION = TRANSITION_DURATION;
 
-    _toggler.visible = false;
-    _this.visible = false;
-
-    this.loadIndicator = {
-      start: function(){
-        _this.tray.toggleLoadingSpinner( true );
-      },
-      stop: function(){
-        _this.tray.toggleLoadingSpinner( false );
-      }
-    };
-
-    _this.loadIndicator.start();
-
     butter.listen( "ready", function(){
-      _this.loadIndicator.stop();
-      _this.visible = true;
-      _this.tray.show();
+      _resizeHandler = new ResizeHandler( { margin: 26, border: 15 } ),
+      _resizeHandler.resize();
+      window.addEventListener( "resize", _resizeHandler.resize, false );
     });
 
-    butter.listen( "mediacontentchanged", function() {
-      unbindKeyDownListener();
-      _this.loadIndicator.start();
-      _toggler.visible = false;
-      butter.ui.visible = false;
-      _toggler.state = true;
-    });
-
-    butter.listen( "mediaready", function() {
-      _this.loadIndicator.stop();
-      _toggler.visible = true;
-      butter.ui.visible = true;
-      _toggler.state = false;
-      bindKeyDownListener();
-    });
+    butter.listen( "mediaready", bindKeyDownListener );
 
     _this.dialogDir = butter.config.value( "dirs" ).dialogs || "";
 

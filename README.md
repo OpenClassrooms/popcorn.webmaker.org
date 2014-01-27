@@ -17,6 +17,7 @@ Prerequisites
 
 * node v0.8 or higher
 * npm (comes with node v0.8 installer)
+* bower (`npm install -g bower`)
 * A working build environment:
   * Mac OS X - Xcode or Command Line Tools package
   * Windows - Python 2.5+ and Visual Studio 2010; specifically:
@@ -30,8 +31,8 @@ Prerequisites
 Environment Setup
 -----------------
 
-1. `git clone --recursive https://github.com/mozilla/butter.git`
-2. `cd butter`
+1. `git clone --recursive https://github.com/mozilla/popcorn.webmaker.org.git`
+2. `cd popcorn.webmaker.org`
 3. `npm install`
 
 Running Butter in development mode

@@ -2,26 +2,27 @@
  * If a copy of the MIT license was not distributed with this file, you can
  * obtain one at https://raw.github.com/mozilla/butter/master/LICENSE */
 
-"use strict";
-
-define( [ "localized", "util/uri" ],
-  function( Localized, URI ) {
+define( [ "localized", "util/uri", "text!/api/butterconfig" ],
+  function( Localized, URI, config ) {
 
   var REGEX_MAP = {
-        YouTube: /(?:https?:\/\/www\.|https?:\/\/|www\.|\.|^)youtu/,
-        Vimeo: /https?:\/\/(www\.)?vimeo.com\/(\d+)($|\/)/,
-        SoundCloud: /(?:https?:\/\/www\.|https?:\/\/|www\.|\.|^)(soundcloud)/,
-        Archive: /(?:https?:\/\/www\.|https?:\/\/|www\.|\.|^)archive\.org\/(details|download)\/((.*)start(\/|=)[\d\.]+(.*)end(\/|=)[\d\.]+)?/,
+        YouTube: /^(?:https?:\/\/www\.|https?:\/\/|www\.|\.|^)youtu/,
+        Vimeo: /^https?:\/\/(www\.)?vimeo.com\/(\d+)/,
+        SoundCloud: /^(?:https?:\/\/www\.|https?:\/\/|www\.|\.|^)(soundcloud)/,
+        Archive: /^(?:https?:\/\/www\.|https?:\/\/|www\.|\.|^)archive\.org\/(details|download|stream)\/((.*)start(\/|=)[\d\.]+(.*)end(\/|=)[\d\.]+)?/,
         // supports #t=<start>,<duration>
         // where start or duration can be: X, X.X or XX:XX
         "null": /^\s*#t=(?:\d*(?:(?:\.|\:)?\d+)?),?(\d+(?:(?:\.|\:)\d+)?)\s*$/,
-        Flickr: /https?:\/\/(www\.)flickr.com/
+        Flickr: /^https?:\/\/(www\.)flickr.com/
       },
       YOUTUBE_EMBED_DISABLED = Localized.get ( "Embedding of this YouTube video is disabled" ),
       YOUTUBE_EMBED_UNPLAYABLE = Localized.get( "This YouTube video is unplayable" ),
+      YOUTUBE_EMBED_PRIVATE = Localized.get( "Private Video" ),
       ARCHIVE_EMBED_DISABLED = Localized.get( "Embedding of this Archive item is not available yet" ),
       EMBED_UNPLAYABLE = Localized.get( "This media source is unplayable" ),
       SOUNDCLOUD_EMBED_DISABLED = Localized.get( "Embedding of this SoundCloud audio source is disabled" );
+
+  var nodeHubbleEndpoint = config.node_hubble_endpoint;
 
   function jwPlayerFallback( options, successCallback, errorCallback ) {
     // We hit an error trying to load HTML5, try the jwplayer instead
@@ -78,6 +79,9 @@ define( [ "localized", "util/uri" ],
       return "HTML5";
     },
     getMetaData: function( baseUrl, successCallback, errorCallback, nextCallback ) {
+
+      baseUrl = decodeURI( baseUrl );
+
       var id,
           userId,
           parsedUri,
@@ -117,6 +121,9 @@ define( [ "localized", "util/uri" ],
           document.body.appendChild( div );
 
           if ( resp.error ) {
+            if ( resp.error.code === 403 ){
+              return errorCallback( YOUTUBE_EMBED_PRIVATE );
+            }
             errorCallback( YOUTUBE_EMBED_UNPLAYABLE );
           }
 
@@ -220,7 +227,9 @@ define( [ "localized", "util/uri" ],
       } else if ( type === "Archive" ) {
         // We don't accept direct MP4/OGV links to videos since Archive.org doesn't want to directly
         // expose the main video's. Until noted, keep it this way and don't change this.
-        if ( baseUrl.indexOf( "details" ) === -1 ) {
+        // Basically always check that any valid types are not included so we can continue to
+        // prevent direct video links being pasted in and attributed as HTML5 video.
+        if ( baseUrl.indexOf( "details" ) === -1 && baseUrl.indexOf( "stream" ) === -1 ) {
           return errorCallback( ARCHIVE_EMBED_DISABLED );
         }
 
@@ -264,6 +273,7 @@ define( [ "localized", "util/uri" ],
           duration: +REGEX_MAP[ "null" ].exec( baseUrl )[ 1 ],
           next: nextCallback
         });
+/*<<<<<<< HEAD
       } else if ( type === "HTML5" ) {
         videoElem = document.createElement( "video" );
         videoElem.addEventListener( "loadedmetadata", function() {
@@ -285,6 +295,60 @@ define( [ "localized", "util/uri" ],
           jwPlayerFallback( options, successCallback, errorCallback );
         }, false );
         videoElem.src = URI.makeUnique( baseUrl ).toString();
+=======*/
+      } else {
+        var title = baseUrl.substring( baseUrl.lastIndexOf( "/" ) + 1 ),
+            mediaElem,
+            errorOptions,
+            successOptions;
+
+        baseUrl = encodeURI( baseUrl );
+
+        errorOptions = {
+          source: baseUrl,
+          type: type,
+          title: title
+        };
+
+        successOptions = {
+          source: baseUrl,
+          type: type,
+          title: title,
+          thumbnail: URI.makeUnique( baseUrl ).toString()
+        };
+
+        Popcorn.getJSONP( nodeHubbleEndpoint + "mime/" + baseUrl, function( resp ) {
+          var contentType = resp.contentType;
+
+          successOptions.contentType = errorOptions.contentType = contentType;
+
+          if ( contentType.indexOf( "video" ) === 0 ) {
+            mediaElem = document.createElement( "video" );
+          } else if ( contentType.indexOf( "audio" ) === 0 || contentType.indexOf( "application/ogg" ) === 0 ) {
+            mediaElem = document.createElement( "audio" );
+            successOptions.hidden = errorOptions.hidden = true;
+          } else if ( contentType.indexOf( "image" ) === 0 ) {
+            successCallback({
+              source: baseUrl,
+              type: "image",
+              thumbnail: baseUrl,
+              title: baseUrl,
+              contentType: contentType,
+              duration: 5
+            });
+            return;
+          }
+
+          mediaElem.addEventListener( "loadedmetadata", function() {
+            successOptions.duration = mediaElem.duration;
+            successCallback( successOptions );
+          }, false );
+          mediaElem.addEventListener( "error", function() {
+            jwPlayerFallback( errorOptions, successCallback, errorCallback );
+          }, false );
+          mediaElem.src = URI.makeUnique( baseUrl ).toString();
+        });
+//>>>>>>> mozilla/master
       }
     }
   };

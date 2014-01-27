@@ -1,5 +1,7 @@
-/* @override 
-   http://ocupopdev.com/popcorn-embed/css/controls.css */
+/* @override
+http://ocupopdev.com/popcorn-embed/css/controls.css */
+
+@import "globals";
 
 .controls {
   position: absolute;
@@ -13,22 +15,23 @@
   opacity: 1;
   z-index: 3;
 }
-
 .controls-hide {
   opacity: 0;
 }
-
 #butter-controls {
   color: #F8FDE2;
   position: relative;
   height: 22px;
   width: 100%;
   display: block;
-  background:white;
+  background: white;
+  &.controls-active {
+    display: block;
+  }
+  &.controls-ready {
+    display: block;
+  }
 }
-
-/* Big Button */
-
 #controls-big-play-button {
   width: 57px;
   height: 66px;
@@ -38,32 +41,17 @@
   left: 50%;
   margin-top: -33px;
   margin-left: -26px;
-  /* This z-index style needs to be kept in sync with our attribution container
-     to ensure it's not appearing above it.
-   */
   z-index: 4;
   cursor: pointer;
+  &.hide-button {
+    display: none;
+  }
 }
-
-#butter-controls.controls-active {
-   /* active happens on mouse over and is reverted to default on mouse out */
-  display: block;
-}
-
-#butter-controls.controls-ready {
-  display: block;
-}
-
-#controls-big-play-button.hide-button {
-  display: none;
-}
-
 .controls-left {
   height: 22px;
   position: absolute;
   width: 35px;
 }
-
 .controls-middle {
   margin-top: 0;
   height: 41px;
@@ -73,7 +61,6 @@
   padding-right: 20px;
   border-right: 1px solid #d5d6d5;
 }
-
 .controls-right {
   padding-top: 0;
   height: 41px;
@@ -82,6 +69,19 @@
   right: 0;
   background: #f2f2f2;
   border-left: 1px solid #d5d6d5;
+  div {
+    background: @midGrey url( "../resources/controls/controls_icons.png" ) no-repeat;
+    margin-top: 6px;
+    margin-left: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 3px;
+    float: left;
+    cursor: pointer;
+    &:hover {
+      background-color: #1eb771;
+    }
+  }
 }
 
 #controls-bars {
@@ -102,18 +102,15 @@
   border-radius: 0px;
 }
 
-.controls-tocbar-item {
-}
-
 .controls-tocbar-item-top {
-  background: rgba(0,0,0);
+  background: rgb(0,0,0);
   height: 2px;
   top: -6px;
   opacity: 0.3;
 }
 
 .controls-tocbar-item-middle {
-  background: rgba(0,0,0);
+  background: rgb(0,0,0);
   height: 2px;
   top: -3px;
   opacity: 0.3;
@@ -154,16 +151,12 @@
   box-shadow: none;
   cursor: pointer;
 }
-
 #controls-progressbar {
   height: 100%;
   background: rgba(233, 83, 37, .6);
   position: absolute;
   border-radius: 0;
 }
-
-/* Time */
-
 .time {
   position: absolute;
   left: 43px;
@@ -177,7 +170,6 @@
   padding-left: 15px;
   color: #58595b;
 }
-
 #controls-currenttime {
   color: #e95325;
   position: relative;
@@ -187,7 +179,6 @@
   font-size: 12px;
   line-height: 1em;
 }
-
 #controls-duration {
   left: auto;
   right: auto;
@@ -217,7 +208,6 @@
   right: 84px;
   width: 38px;
 }
-
 #controls-volume {
   position: absolute;
   background: #e4e4e4;
@@ -229,34 +219,29 @@
   box-shadow: none;
   cursor: pointer;
 }
-
 #controls-volume-progressbar {
   height: 100%;
   background: rgba(233, 83, 37, .7);
   position: absolute;
   border-radius: 0;
 }
-
 #controls-volume-scrubber {
   height: 100%;
   width: 2px;
   background: #EEE;
   position: absolute;
   cursor: pointer;
+  &:after {
+    content: "";
+    position: absolute;
+    width: 8px;
+    height: 15px;
+    border-radius: 15px;
+    background: #EEE;
+    top: -2px;
+    left: -5px;
+  }
 }
-
-#controls-volume-scrubber:after {
-  content: "";
-  position: absolute;
-  width: 8px;
-  height: 15px;
-  border-radius: 15px;
-  background: #EEE;
-  top: -2px;
-  left: -5px;
-}
-
-/* Buttons */
 
 #controls-play {
   width: 28px;
@@ -267,6 +252,9 @@
   margin-top: 7px;
   margin-left: 7px;
   cursor: pointer;
+  &:hover {
+    background-color: #60c7a5;
+  }
 }
 
 #controls-play:hover {
@@ -314,29 +302,18 @@
   padding: 0;
   left: -8px;
   top: 12px;
+  color: @midGrey;
 }
-
 .controls-btn {
   padding: 10px;
   position: absolute;
   top: 0;
 }
-
 .controls-playing {
   background-position: center -15px !important;
 }
-
 .controls-paused {
   background-position: center 10px !important;
-
-}
-
-.controls-muted {
-  background-position: -360px -24px;
-}
-
-.controls-unmuted {
-  background-position: -384px -24px;
 }
 
 #controls-share,
@@ -364,7 +341,6 @@
   background-repeat: no-repeat;
   background-position: 6px 8px;
 }
-
 #controls-remix {
   background-position: -61px -2px;
 }
@@ -373,7 +349,6 @@
   left: 30px;
   background-position: 7px -2px;
 }
-
 #controls-logo {
   width: 45px;
   height: 42px;
@@ -381,4 +356,38 @@
   position: absolute;
   right: 0;
   cursor: pointer;
+}
+.controls-time-tooltip {
+  @_tooltipHeight: 30px;
+  @_tooltipWidth: 70px;
+  &.tooltip-no-transition-on {
+    opacity: 1;
+    visibility: visible;
+  }
+  visibility: hidden;
+  opacity: 0;
+  height: @_tooltipHeight;
+  position: absolute;
+  top: -( @_tooltipHeight + 4px );
+  left: 50%;
+  margin-top: -7px;
+  margin-left: -@_tooltipWidth / 2;
+  z-index: @MODAL_Z_INDEX;
+  width: @_tooltipWidth;
+  padding: @_tooltipHeight / 3;
+  background: #FFF;
+  text-shadow: none;
+  color: @baseText;
+  line-height: @_tooltipHeight / 3;
+  font-size: 11px;
+  .box-sizing( border-box );
+  border-radius: 2px;
+  text-align: center;
+  border: 1px solid @baseLightOutline;
+  box-shadow: 0 5px 6px -5px rgba( 0, 0, 0, .3 );
+  pointer-events: none;
+  .transition( opacity 0.3s ease 0 );
+}
+.no-events {
+  pointer-events: none;
 }

@@ -3,7 +3,6 @@
 */
 @_trackEventHeight: 27px;
 @_trackHeight: @_trackEventHeight + 3;
-@_mediaContainerHeight: 125px;
 @_trackContainerSpacing: 0;
 @_trackHandleWidth: 129px;
 
@@ -13,6 +12,9 @@
 .butter-timeline-area {
   position: absolute;
   left: 0;
+  bottom: 0;
+  top: 0;
+  right: 0;
   border-top: 1px solid @baseLightOutline;
 }
 
@@ -22,6 +24,7 @@
   top: 0;
   left: 0;
   right: @_timebarRight;
+  bottom: @_superScrollbarHeight;
   z-index: @TRAY_Z_INDEX + 1;
 }
 // inside .butter-timeline
@@ -50,7 +53,7 @@
 .media-container {
   position: relative;
   top: @_trackContainerSpacing;
-  height: @_mediaContainerHeight;
+  height: 100%;
 }
 
 .tracks-container-wrapper {
@@ -61,6 +64,14 @@
   border-left: 1px solid @baseLightOutline;
   border-right: 1px solid @baseLightOutline;
   box-shadow: inset 0 0 5px 0 rgba( 0, 0, 0, 0.2 );
+  .bounding-box-selection {
+    position: absolute;
+    background-color: rgba(43, 124, 97, 0.2);
+    border: 1px solid rgba(43, 124, 97, 0.8);
+    &.hidden {
+      display: none;
+    }
+  }
 }
 
 .tracks-container {
@@ -79,7 +90,6 @@
 
   .track-title {
     display: inline-block;
-    position: absolute;
     left: 5px;
     top: 50%;
   }
@@ -126,13 +136,12 @@
     font-size: 11px;
     font-weight: 700;
     text-align: left;
-    position: absolute;
-    left: 35px;
     line-height: 25px;
+    margin-left: 25px;
     color: @baseText;
   }
   .butter-track-event-icon {
-    position: absolute;
+    float: left;
     height: 25px;
     width: 30px;
     background-size: 20px;
@@ -338,7 +347,7 @@
 .track-handle-container {
   position: absolute;
   width: @_trackHandleWidth;
-  height: @_mediaContainerHeight;
+  height: 100%;
   left: 0;
   top: @_trackContainerSpacing;
   bottom: 1px;
@@ -354,7 +363,6 @@
 .track-handle {
   border: none;
   border-bottom: 1px solid darken( @baseLight, 25% );
-  cursor: pointer;
   width: 100%;
   height: @_trackHeight;
   background: @baseLight;
@@ -363,9 +371,14 @@
   overflow: hidden;
   box-shadow: inset 0 1px #FFF;
   .title {
-    padding-left: 22px;
+    margin-left: 22px;
     font-size: 11px;
     color: @baseText;
+    float: left;
+    display: block;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   &:first-of-type {
     box-shadow: none;
@@ -396,11 +409,24 @@
   &:hover .menu {
     width: 16px;
   }
-  &:hover .track-handle-icon {
-    border-color: #000;
-    &:after {
-      border-bottom-color: #000;
+  .track-handle-icon {
+    &:hover {
+      border-color: #000;
+      &:after {
+        border-bottom-color: #000;
+      }
     }
+  }
+  .icon-pencil {
+    opacity: 0.4;
+    margin: 5px;
+    visibility: hidden;
+    color: @green;
+    cursor: pointer;
+    float: left;
+  }
+  &:hover .icon-pencil {
+    visibility: visible;
   }
 }
 
@@ -408,8 +434,9 @@
   border: 0 solid darken( @baseLightOutline, 10% );
   box-shadow: inset 0 1px 0 #FFF, 0 1px 0 #FFF;
   position: absolute;
-  top: 9px;
-  right: 15px;
+  cursor: pointer;
+  right: 0;
+  margin: 9px;
   display: inline-block;
   width: 14px;
   height: 9px;

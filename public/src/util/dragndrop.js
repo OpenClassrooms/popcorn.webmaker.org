@@ -391,7 +391,7 @@ define( [ "core/eventmanager", "util/lang", "util/scroll-group" ],
         mousePosition = e.clientX;
         if ( _updateInterval === -1 ) {
           _lastDims = [];
-          _resizeEvent.direction = 'left';
+          _resizeEvent.direction = "left";
           _updateInterval = setInterval( update, SCROLL_INTERVAL );
           _onStart( _resizeEvent );
         }
@@ -478,7 +478,7 @@ define( [ "core/eventmanager", "util/lang", "util/scroll-group" ],
         mousePosition = e.clientX;
         if ( _updateInterval === -1 ) {
           _lastDims = [];
-          _resizeEvent.direction = 'right';
+          _resizeEvent.direction = "right";
           _updateInterval = setInterval( update, SCROLL_INTERVAL );
           _onStart( _resizeEvent );
         }
@@ -699,7 +699,7 @@ define( [ "core/eventmanager", "util/lang", "util/scroll-group" ],
         element.removeEventListener( "dragover", onDragOver, false );
         element.removeEventListener( "dragenter", onDragEnter, false );
         element.removeEventListener( "dragleave", onDragLeave, false );
-      },
+      }
     };
 
     Object.defineProperties( _droppable, {
@@ -908,6 +908,8 @@ define( [ "core/eventmanager", "util/lang", "util/scroll-group" ],
     };
 
     _draggable.start = function( e ) {
+      _oldZIndex = getComputedStyle( element ).getPropertyValue( "z-index" );
+      element.style.zIndex = MAXIMUM_Z_INDEX;
       // Store original position of the element and the offset of the mouse wrt the window. These values are used
       // in calculations elsewhere (e.g. update, containment, etc.) to figure out exactly how many pixels the user
       // moved the element. Later, _originalPosition is used to revert the element to its original position if
@@ -939,6 +941,7 @@ define( [ "core/eventmanager", "util/lang", "util/scroll-group" ],
     };
 
     _draggable.stop = function() {
+      element.style.zIndex = _oldZIndex;
       // If originalPosition is not null, start() was called
       if ( _originalPosition ) {
         LangUtils.setTransformProperty( _element, "" );
@@ -974,12 +977,9 @@ define( [ "core/eventmanager", "util/lang", "util/scroll-group" ],
         },
         set: function( val ) {
           if ( val ) {
-            _oldZIndex = getComputedStyle( element ).getPropertyValue( "z-index" );
-            element.style.zIndex = MAXIMUM_Z_INDEX;
             __selectedDraggables.push( _draggable );
           }
           else {
-            element.style.zIndex = _oldZIndex;
             for ( var i = __selectedDraggables.length - 1; i >= 0; --i ) {
               if ( __selectedDraggables[ i ].element === _element ) {
                 __selectedDraggables.splice( i, 1 );
@@ -1003,6 +1003,7 @@ define( [ "core/eventmanager", "util/lang", "util/scroll-group" ],
   function Sortable( parentElement, options ) {
 
     var _onChange = options.change || NULL_FUNCTION,
+        _items = {},
         _elements = [],
         _instance = {},
         _mouseDownPosition = 0,
@@ -1013,6 +1014,104 @@ define( [ "core/eventmanager", "util/lang", "util/scroll-group" ],
         _placeHolder,
         _oldZIndex;
 
+    function Item( element, handle ) {
+      var _this = this;
+      this.element = element;
+      this.handle = handle || element;
+
+      function onElementMouseMove( e ) {
+        if ( !_moved ) {
+          _moved = true;
+          _placeHolder = createPlaceholder( _draggingElement );
+          parentElement.appendChild( _draggingElement );
+          _draggingElement.style.position = "absolute";
+          _draggingElement.style.zIndex = MAXIMUM_Z_INDEX;
+          positionElement( 0 );
+        } else {
+          var diff = _mouseDownPosition - e.clientY;
+          positionElement( diff );
+          var dragElementRect = _draggingElement.getBoundingClientRect();
+          for ( var i = _elements.length - 1; i >= 0; --i ) {
+            var element = _elements[ i ];
+
+            if ( element === _draggingElement ) {
+              continue;
+            }
+
+            var rect = element.getBoundingClientRect();
+
+            var maxL = Math.max( dragElementRect.left, rect.left ),
+                maxT = Math.max( dragElementRect.top, rect.top ),
+                minR = Math.min( dragElementRect.right, rect.right ),
+                minB = Math.min( dragElementRect.bottom, rect.bottom );
+
+            if ( minR < maxL || minB < maxT ) {
+              continue;
+            }
+
+            if ( minB - maxT > dragElementRect.height / 2 ) {
+              _hoverElement = element;
+              var newPlaceHolder = createPlaceholder( _hoverElement );
+              parentElement.replaceChild( _hoverElement, _placeHolder );
+              _placeHolder = newPlaceHolder;
+              var orderedElements = [],
+                  childNodes = parentElement.childNodes;
+              for ( var j = 0, l = childNodes.length; j < l; ++j ) {
+                var child = childNodes[ j ];
+                if ( child !== _draggingElement ) {
+                  if ( child !== _placeHolder ) {
+                    orderedElements.push( child );
+                  } else {
+                    orderedElements.push( _draggingElement );
+                  }
+                }
+              }
+              _onChange( orderedElements );
+            }
+          }
+        }
+      }
+
+      function onElementMouseDown( e ) {
+        // Stop text selection in chrome.
+        e.preventDefault();
+        if ( e.which !== 1 ) {
+          return;
+        }
+        _moved = false;
+        _draggingElement = _this.element;
+        _draggingOriginalPosition = _draggingElement.offsetTop;
+
+        var style = getComputedStyle( _draggingElement );
+
+        _oldZIndex = style.getPropertyValue( "z-index" );
+        _mouseDownPosition = e.clientY;
+
+        window.addEventListener( "mouseup", onElementMouseUp, false );
+        window.addEventListener( "mousemove", onElementMouseMove, false );
+
+        DragNDrop.dispatch( "sortstarted", e );
+      }
+
+      function onElementMouseUp() {
+        _draggingElement.style.zIndex = _oldZIndex;
+        window.removeEventListener( "mouseup", onElementMouseUp, false );
+        window.removeEventListener( "mousemove", onElementMouseMove, false );
+        _moved = false;
+        if ( _placeHolder ) {
+          _draggingElement.style.zIndex = "";
+          _draggingElement.style.position = "";
+          _draggingElement.style.top = "";
+          parentElement.replaceChild( _draggingElement, _placeHolder );
+          _placeHolder = null;
+        }
+        DragNDrop.dispatch( "sortstopped" );
+      }
+      this.handle.addEventListener( "mousedown", onElementMouseDown, false );
+      this.destroy = function() {
+        this.handle.removeEventListener( "mousedown", onElementMouseDown, false );
+      };
+    }
 
     function createPlaceholder( victim ) {
       var placeholder = victim.cloneNode( false );
@@ -1025,105 +1124,15 @@ define( [ "core/eventmanager", "util/lang", "util/scroll-group" ],
       _draggingElement.style.top = _draggingOriginalPosition - diff + "px";
     }
 
-    function onElementMouseMove( e ) {
-      if ( !_moved ) {
-        _moved = true;
-        _placeHolder = createPlaceholder( _draggingElement );
-        parentElement.appendChild( _draggingElement );
-        _draggingElement.style.position = "absolute";
-        _draggingElement.style.zIndex = MAXIMUM_Z_INDEX;
-        positionElement( 0 );
-      }
-      else{
-        var diff = _mouseDownPosition - e.clientY;
-        positionElement( diff );
-        var dragElementRect = _draggingElement.getBoundingClientRect();
-        for ( var i=_elements.length - 1; i>=0; --i ) {
-          var element = _elements[ i ];
-
-          if ( element === _draggingElement ) {
-            continue;
-          }
-
-          var rect = element.getBoundingClientRect();
-
-          var maxL = Math.max( dragElementRect.left, rect.left ),
-              maxT = Math.max( dragElementRect.top, rect.top ),
-              minR = Math.min( dragElementRect.right, rect.right ),
-              minB = Math.min( dragElementRect.bottom, rect.bottom );
-
-          if ( minR < maxL || minB < maxT ) {
-            continue;
-          }
-
-          if ( minB - maxT > dragElementRect.height / 2 ) {
-            _hoverElement = element;
-            var newPlaceHolder = createPlaceholder( _hoverElement );
-            parentElement.replaceChild( _hoverElement, _placeHolder );
-            _placeHolder = newPlaceHolder;
-            var orderedElements = [],
-                childNodes = parentElement.childNodes;
-            for ( var j=0, l=childNodes.length; j<l; ++j ) {
-              var child = childNodes[ j ];
-              if ( child !== _draggingElement ) {
-                if ( child !== _placeHolder ) {
-                  orderedElements.push( child );
-                }
-                else{
-                  orderedElements.push( _draggingElement );
-                }
-              }
-            }
-            _onChange( orderedElements );
-          }
-        }
-      }
-    }
-
-    function onElementMouseDown( e ) {
-      // Stop text selection in chrome.
-      e.preventDefault();
-      if ( e.which !== 1 ) {
-        return;
-      }
-      _moved = false;
-      _draggingElement = this;
-      _draggingOriginalPosition = _draggingElement.offsetTop;
-
-      var style = getComputedStyle( _draggingElement );
-
-      _oldZIndex = style.getPropertyValue( "z-index" );
-      _mouseDownPosition = e.clientY;
-
-      window.addEventListener( "mouseup", onElementMouseUp, false );
-      window.addEventListener( "mousemove", onElementMouseMove, false );
-
-      DragNDrop.dispatch( "sortstarted", e );
-    }
-
-    function onElementMouseUp() {
-      _draggingElement.style.zIndex = _oldZIndex;
-      window.removeEventListener( "mouseup", onElementMouseUp, false );
-      window.removeEventListener( "mousemove", onElementMouseMove, false );
-      _moved = false;
-      if ( _placeHolder ) {
-        _draggingElement.style.zIndex = "";
-        _draggingElement.style.position = "";
-        _draggingElement.style.top = "";
-        parentElement.replaceChild( _draggingElement, _placeHolder );
-        _placeHolder = null;
-      }
-      DragNDrop.dispatch( "sortstopped" );
-    }
-
-    _instance.addItem = function( item ) {
-      _elements.push( item );
-      item.addEventListener( "mousedown", onElementMouseDown, false );
+    _instance.addItem = function( id, options ) {
+      _items[ id ] = new Item( options.item, options.handle );
+      _elements.push( options.item );
     };
 
-    _instance.removeItem = function( item ) {
-      _elements.splice( _elements.indexOf( item ), 1 );
-      item.removeEventListener( "mousedown", onElementMouseDown, false );
+    _instance.removeItem = function( id ) {
+      _elements.splice( _elements.indexOf( _items[ id ].element ), 1 );
+      _items[ id ].destroy();
+      delete _items[ id ];
     };
 
     return _instance;

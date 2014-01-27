@@ -19,8 +19,20 @@
     .butter-project-thumbnail {
       margin-top: 10px;
     }
+    .butter-embed-preload-label {
+      width: 90px;
+      float: left;
+      padding: 0;
+      margin: 5px 0 0 40px;
+    }
     .butter-preview-link {
       vertical-align: top;
+    }
+    .butter-embed-height-width {
+      width: 50%;
+      padding: 5px;
+      .box-sizing( border-box );
+      float: left;
     }
     .description-wrapper {
       display: block;
@@ -50,7 +62,6 @@
       .tags-output {
         display: inline;
         list-style: none;
-        margin: 0;
         padding: 0;
         border: none;
         text-align: left;
@@ -92,18 +103,17 @@
       }
 
       .tags-input {
-        padding: 0;
-        margin: 0;
-        height: auto;
-        margin-left: 5px;
         width: 100px;
         line-height: 20px;
+        display: block;
+        height: 25px;
+        margin-left: 5px;
         border: none;
-        border-bottom: 1px dashed black;
-        background: @baseLight;
+        border-bottom: 1px dashed #DDD;
         font-size: 1em;
         font-family: inherit;
         .box-sizing( border-box );
+        background: @baseLight;
 
         &:focus {
           outline: none;
@@ -115,10 +125,10 @@
     .thumbnail-choices {
       margin: 0;
       padding: 0;
+      list-style: none;
 
       > li {
         float: left;
-        display: inline-block;
         border: 3px solid white;
         width: 50px;
         height: 50px;

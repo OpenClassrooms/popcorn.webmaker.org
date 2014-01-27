@@ -8,14 +8,14 @@
  * Butter Module for Editors
  */
 define( [ "localized", "core/eventmanager", "core/trackevent", "./editor",
-          "ui/toggler", "util/lang", "l10n!/layouts/editor-area.html",
-          "./default", "core/logger", "./header",
+          "ui/toggler", "ui/resizeHandler", "util/lang", "l10n!/layouts/editor-area.html",
+          "./default", "core/logger", "./header", "./editorhelper",
           // Included here to register themselves.
           "./media-gallery-editor", "./project-editor", "./sequencer-editor", "./chapter-editor",
           "./tutorial-editor" ],
   function( Localized, EventManager, TrackEvent, Editor,
-            Toggler, LangUtils, EDITOR_AREA_LAYOUT,
-            DefaultEditor, Logger, Header ){
+            Toggler, ResizeHandler, LangUtils, EDITOR_AREA_LAYOUT,
+            DefaultEditor, Logger, Header, EditorHelper ){
 
   var DEFAULT_EDITOR_NAME = "plugin-list";
 
@@ -36,15 +36,20 @@ define( [ "localized", "core/eventmanager", "core/trackevent", "./editor",
         _editorContentArea = _editorAreaDOMRoot.querySelector( ".butter-editor-content" ),
         _header,
         _toggler,
+        _editorHelper,
         _this = this,
         _createdEditors = {},
+        _resizeHandler = new ResizeHandler( { margin: 26, border: 15 } ),
         _logger = new Logger( butter.id );
 
     EventManager.extend( _this );
 
     ButterNamespace.Editor = Editor;
 
+    _editorHelper = new EditorHelper( butter );
+
     _header = new Header( _editorAreaDOMRoot, _this );
+    LangUtils.applyTransitionEndListener( _editorAreaDOMRoot, _resizeHandler.resize );
 
     /**
      * Member: openEditor
@@ -178,26 +183,28 @@ define( [ "localized", "core/eventmanager", "core/trackevent", "./editor",
      * @param {Function} onModuleReady: Callback to signify that module is ready
      */
     this._start = function( onModuleReady ){
+
       _toggler = new Toggler( _editorAreaDOMRoot.querySelector( ".butter-editor-close-btn" ),
         function() {
           var newState = !_editorAreaDOMRoot.classList.contains( "minimized" );
 
-          var onTransitionEnd = function(){
-            LangUtils.removeTransitionEndListener( _editorAreaDOMRoot, onTransitionEnd );
-            _this.dispatch( "editortoggled", newState );
-          };
-
+          var _togetherjs = document.querySelector( ".togetherjs-dock-right" );
           _toggler.state = newState;
           if ( newState ) {
             document.body.classList.remove( "editor-open" );
             _editorAreaDOMRoot.classList.add( "minimized" );
+            if ( _togetherjs ) {
+              _togetherjs.classList.add( "minimized" );
+            }
           }
           else {
             document.body.classList.add( "editor-open" );
             _editorAreaDOMRoot.classList.remove( "minimized" );
+            if ( _togetherjs ) {
+              _togetherjs.classList.remove( "minimized" );
+            }
           }
-
-          LangUtils.applyTransitionEndListener( _editorAreaDOMRoot, onTransitionEnd );
+          _this.dispatch( "editortoggled", !newState );
 
         }, Localized.get( "Show/Hide Editor" ), true );
 
@@ -207,8 +214,10 @@ define( [ "localized", "core/eventmanager", "core/trackevent", "./editor",
       if ( butter.config.value( "ui" ).enabled !== false ) {
 
         // Set up views for plugin list editor
-        butter.listen( "mediacontentchanged", _header.views.disablePlugins );
         butter.listen( "mediaready", _header.views.enablePlugins );
+        butter.listen( "trackeventeditorclose", function( e ) {
+          _this.closeTrackEventEditor( e.data );
+        });
         document.body.classList.add( "butter-editor-spacing" );
 
         // Start minimized
@@ -229,7 +238,18 @@ define( [ "localized", "core/eventmanager", "core/trackevent", "./editor",
 
         if ( editorsToLoad.length > 0 ){
           butter.loader.load( editorsToLoad, function() {
-            Editor.initialize( onModuleReady, butter.config.value( "baseDir" ) );
+            Editor.initialize(function( pluginCallbacks ) {
+              // Register all callbacks for each plugin type with EditorHelper Module.
+              // This is needed so any trackeventupdated dispatch properly adds these
+              // helper methods.
+              for ( var key in pluginCallbacks ) {
+                if ( pluginCallbacks.hasOwnProperty( key ) ) {
+                  _editorHelper.addPlugin( key, pluginCallbacks[ key ] );
+                }
+              }
+
+              onModuleReady();
+            }, butter.config.value( "baseDir" ) );
           }, function( e ) {
             _logger.log( "Couldn't load editor " + e.target.src );
 

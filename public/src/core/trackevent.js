@@ -41,8 +41,24 @@ define( [ "./logger", "./eventmanager", "./observer",
 
     options = options || {};
 
+    // If we've been passed an Id then use it, otherwise use __guid like usual.
+    if ( "id" in options ) {
+      // If we've been passed an Id with the same Id as the current GUID then
+      // just increment __guid.
+      if ( options.id === __guid ) {
+        __guid++;
+      }
+      // If the id we've been passed is greater then Id then this means we're
+      // out of sync. Update __guid to be in sync.
+      else if( options.id > __guid ) {
+        __guid = options.id + 1;
+      }
+    } else {
+      options.id = __guid++;
+    }
+
     var _this = this,
-        _id = "TrackEvent" + __guid++,
+        _id = "TrackEvent" + options.id,
         _name = options.name || _id,
         _logger = new Logger( _id ),
         _track = null,
@@ -121,9 +137,18 @@ define( [ "./logger", "./eventmanager", "./observer",
       manifestOptions = this.manifest.options;
       for ( var prop in manifestOptions ) {
         if ( manifestOptions.hasOwnProperty( prop ) ) {
-          if ( !popcornOptions.hasOwnProperty( prop ) ) {
+          if ( popcornOptions[ prop ] === null || typeof popcornOptions[ prop ] === "undefined" ) {
             foundMissingOptions = true;
             value = defaultValue( prop, manifestOptions );
+            // The issue here is if we translate that value too soon in trackevent-editor.js
+            // and it won't match any of the select values, thus it doesn't properly find
+            // the select default because type just so happens to have a value in the translation files
+            if ( manifestOptions[ prop ].elem === "select" &&
+                 manifestOptions[ prop ].values &&
+                 manifestOptions[ prop ].values.indexOf( value ) !== -1 ) {
+              newOptions[ prop ] = value;
+              continue;
+            }
             newOptions[ prop ] = Localized.get( value ) ? Localized.get( value ) : value;
           }
         }
@@ -149,8 +174,7 @@ define( [ "./logger", "./eventmanager", "./observer",
           manifestOptions,
           media,
           preventUpdate = true,
-          updateNotification,
-          duration;
+          updateNotification;
 
       if ( !updateOptions ) {
         updateOptions = {};
@@ -195,9 +219,8 @@ define( [ "./logger", "./eventmanager", "./observer",
         return;
       }
 
-      if ( _track && _track._media ) {
+      if ( _track ) {
         media = _track._media;
-        duration = media.duration;
 
         if ( this.manifest ) {
           manifestOptions = this.manifest.options;

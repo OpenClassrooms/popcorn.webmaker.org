@@ -173,8 +173,8 @@ function init() {
       width = shareSize[ 0 ],
       height = shareSize[ 1 ];
 
-    return '<iframe src="' + src + '" width="' + width + '" height="' + height +
-           '" frameborder="0" mozallowfullscreen webkitallowfullscreen allowfullscreen></iframe>';
+    return "<iframe src='" + src + "' width='" + width + "' height='" + height +
+           "' frameborder='0' mozallowfullscreen webkitallowfullscreen allowfullscreen></iframe>";
   }
 
   // We put the embed's cannoncial URL in a <link rel="cannoncial" href="...">
@@ -240,6 +240,9 @@ function init() {
 
     popcorn.on( "ended", function() {
       setStateClass( "embed-dialog-open" );
+      window.parent.postMessage({
+        type: "ended"
+      }, "*" );
     });
 
     popcorn.on( "pause", function() {
@@ -275,6 +278,13 @@ function init() {
         }, "*" );
       });
     }
+
+    popcorn.on( "durationchange", function() {
+      window.parent.postMessage({
+        duration: popcorn.duration(),
+        type: "durationchange"
+      }, "*" );
+    });
 
     popcorn.on( "timeupdate", function() {
       window.parent.postMessage({
@@ -367,12 +377,15 @@ function init() {
       "util/lang",
       "ui/widget/controls",
       "ui/widget/textbox",
+      "ui/resizeHandler",
       "util/mediatypes",
       "text!layouts/attribution.html",
+      "util/accepted-flash",
       "util/accepted-ua",
       "popcorn"
     ],
-    function( URI, LangUtil, Controls, TextboxWrapper, MediaUtil, DEFAULT_LAYOUT_SNIPPETS ) {
+    function( URI, LangUtil, Controls, TextboxWrapper, ResizeHandler, MediaUtil, DEFAULT_LAYOUT_SNIPPETS, FLASH ) {
+
       var __defaultLayouts = LangUtil.domFragment( DEFAULT_LAYOUT_SNIPPETS );
       /**
        * Expose Butter so we can get version info out of the iframe doc's embed.
@@ -383,6 +396,7 @@ function init() {
             version: "Butter-Embed-@VERSION@"
           },
           popcorn,
+          resizeHandler = new ResizeHandler(),
           config,
           qs = URI.parse( window.location.href ).queryKey,
           container = document.querySelectorAll( ".container" )[ 0 ];
@@ -428,6 +442,9 @@ function init() {
         branding: qs.branding === "0" ? false : true,
         showinfo: qs.showinfo === "0" ? false : true
       };
+
+      resizeHandler.resize();
+      window.addEventListener( "resize", resizeHandler.resize, false );
 
       Controls.create( "controls", {
         onShareClick: function() {
@@ -479,12 +496,20 @@ function init() {
               mapEvents = popcorn.data.trackEvents.where({ type: "googlemap" }),
               attributionContainer = document.querySelector( ".attribution-details" ),
               attributionMedia = document.querySelector( ".attribution-media" ),
+
               attributionContent = selectId( ".attribution-content" ),
               toggler = selectId( ".attribution-logo" ),
               closeBtn = selectId( ".attribution-close" ),
               container = selectId( ".attribution-info" ),
               jsonToc,
-              htmlToc;
+              htmlToc,
+              checkedFlashVersion;
+/*=======
+              toggler = $( ".attribution-logo" ),
+              closeBtn = $( ".attribution-close" ),
+              container = $( ".attribution-info" ),
+              checkedFlashVersion;
+>>>>>>> mozilla/master*/
 
           // Backwards compat for old layout. Removes the null media that's shown there.
           if ( attributionMedia ) {
@@ -667,6 +692,11 @@ function init() {
               source = clip.source[ 0 ];
               type = MediaUtil.checkUrl( source );
 
+              if ( type === "YouTube" && !checkedFlashVersion ) {
+                checkedFlashVersion = true;
+                FLASH.warn();
+              }
+
               if ( type === "Archive" ) {
                 source = clip.linkback;
               }
@@ -685,6 +715,7 @@ function init() {
             var imagesContainer = __defaultLayouts.querySelector( ".attribution-images" ).cloneNode( true ),
                 imgCont,
                 img,
+                imgPrefix = "/resources/icons/",
                 foundMatch = false;
 
             for ( var k = 0; k < imageEvents.length; k++ ) {
@@ -693,7 +724,9 @@ function init() {
 
               var href = img.photosetId || img.src || "http://www.flickr.com/search/?m=tags&q=" + img.tags,
                   text = img.src || img.photosetId || img.tags,
-                  icon = imgCont.querySelector( "img" );
+                  icon = document.createElement( "img" );
+
+              icon.classList.add( "media-icon" );
 
               imgCont.querySelector( "a" ).href = href;
               imgCont.querySelector( "a" ).innerHTML = text;
@@ -707,11 +740,13 @@ function init() {
 
               if ( img.tags || img.photosetId || MediaUtil.checkUrl( img.src ) === "Flickr" ) {
                 foundMatch = true;
-                icon.src += "flickr-black.png";
+                icon.src += imgPrefix + "flickr-black.png";
+                imgCont.insertBefore( icon, imgCont.firstChild );
                 imagesContainer.appendChild( imgCont );
               } else if ( img.src.indexOf( "giphy" ) !== -1 ) {
                 foundMatch = true;
-                icon.src += "giphy.png";
+                icon.src += imgPrefix + "giphy.png";
+                imgCont.insertBefore( icon, imgCont.firstChild );
                 imagesContainer.appendChild( imgCont );
               } else {
                 imgCont = null;

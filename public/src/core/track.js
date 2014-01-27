@@ -7,19 +7,43 @@ define( [ "localized", "./eventmanager", "./trackevent", "./views/track-view", "
 
   var __guid = 0,
       NAME_PREFIX = Localized.get( "Layer" ) + " ",
+      // Old layer names can be saved as Layer n before l10n existed,
+      // these names are default names and should be translated.
+      // If we are going to start using this,
+      // we should check if it's the translated or english default, and update it.
+      defaultNameRegexTranslated = new RegExp( "^" + NAME_PREFIX + "(\\d)+$" ),
+      defaultNameRegex = new RegExp( "^" + "Layer " + "(\\d)+$" ),
       Track;
 
   Track = function( options, visible ) {
     options = options || {};
 
+    // If we've been passed an Id then use it, otherwise use __guid like usual.
+    if ( "id" in options ) {
+      // If we've been passed an Id with the same Id as the current GUID then
+      // just increment __guid.
+      if ( options.id === __guid ) {
+        __guid++;
+      }
+      // If the id we've been passed is greater then Id then this means we're
+      // out of sync. Update __guid to be in sync.
+      else if( options.id > __guid ) {
+        __guid = options.id + 1;
+      }
+    } else {
+      options.id = __guid++;
+    }
+
     var _trackEvents = [],
         _target = options.target,
-        _id = "" + __guid++,
+        _id = "" + options.id,
         _view = new TrackView( _id, this ),
         _popcornWrapper = null,
         _this = this,
         _order = 0,
-        _name = NAME_PREFIX + _order,
+
+        //_name = NAME_PREFIX + _order,
+        _name = "";
         _visible = true;
 
     if( !visible ) {
@@ -83,11 +107,16 @@ define( [ "localized", "./eventmanager", "./trackevent", "./views/track-view", "
       name: {
         enumerable: true,
         get: function(){
+          if ( !_name || defaultNameRegexTranslated.test( _name ) || defaultNameRegex.test( _name ) ) {
+            return NAME_PREFIX + _order;
+          }
           return _name;
         },
         set: function( name ) {
-          _name = name;
-          _this.dispatch( "tracknamechanged", _this );
+          if ( _name !== name ) {
+            _name = name;
+            _this.dispatch( "tracknamechanged", _this );
+          }
         }
       },
       id: {
@@ -106,11 +135,12 @@ define( [ "localized", "./eventmanager", "./trackevent", "./views/track-view", "
           return {
             name: _name,
             id: _id,
+            order: _order,
             trackEvents: exportJSONTrackEvents
           };
         },
-        set: function( importData ){
-          if( importData.name ){
+        set: function( importData ) {
+          if( importData.name && !defaultNameRegexTranslated.test( importData.name ) && !defaultNameRegex.test( importData.name ) ){
             _name = importData.name;
           }
           if( importData.trackEvents ){
@@ -139,7 +169,6 @@ define( [ "localized", "./eventmanager", "./trackevent", "./views/track-view", "
         },
         set: function( val ) {
           _order = val;
-          _name = NAME_PREFIX + val;
         }
       },
       visible: {
@@ -292,9 +321,7 @@ define( [ "localized", "./eventmanager", "./trackevent", "./views/track-view", "
       _this.dispatch( "trackeventadded", trackEvent );
 
       // Update the trackevent with defaults (if necessary)
-      if ( _this._media ) {
-        trackEvent.applyDefaults();
-      }
+      trackEvent.applyDefaults();
 
       return trackEvent;
     }; //addTrackEvent
@@ -317,6 +344,11 @@ define( [ "localized", "./eventmanager", "./trackevent", "./views/track-view", "
         trackEvent.unsubscribe( "update", trackEventUpdateNotificationHandler );
         _view.removeTrackEvent( trackEvent );
         trackEvent.unbind( preventRemove );
+
+        if ( !preventRemove ) {
+          _this.dispatch( "trackeventeditorclose", trackEvent );
+        }
+
         _this.dispatch( "trackeventremoved", trackEvent );
         return trackEvent;
       }
@@ -375,6 +407,10 @@ define( [ "localized", "./eventmanager", "./trackevent", "./views/track-view", "
     }; //deselectEvents
 
   }; //Track
+
+  Track.setGuid = function( val ) {
+    __guid = val;
+  };
 
   return Track;
 

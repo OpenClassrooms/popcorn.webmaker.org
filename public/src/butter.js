@@ -29,8 +29,15 @@ window.Butter = {
     baseUrl: "/src",
     paths: {
       "localized": "/static/bower/webmaker-i18n/localized",
+      "jquery": "/static/bower/jquery/jquery.min",
+      "jquery-ui": "/static/bower/jquery-ui/ui/jquery-ui",
+      "farbtastic": "/static/bower/farbtastic/farbtastic",
       "WebmakerUI": "/static/bower/webmaker-ui/ui",
       "webmaker-ui-fragments": "/static/bower/webmaker-ui/webmaker-ui-fragments"
+    },
+    shim: {
+      "jquery-ui": [ "jquery" ],
+      "farbtastic": [ "jquery" ]
     }
   });
 
@@ -43,7 +50,8 @@ window.Butter = {
             "util/xhr", "util/lang", "util/tutorial",
             "text!default-config.json",
             "ui/widget/tooltip", "crashreporter", "core/project",
-            "localized", "util/accepted-ua"
+            "localized", "util/uri", "util/mediatypes",
+            "util/accepted-ua", "jquery", "jquery-ui", "farbtastic"
           ],
           function(
             EventManager, Logger, Config, Track,
@@ -53,7 +61,7 @@ window.Butter = {
             xhr, Lang, Tutorial,
             DEFAULT_CONFIG_JSON,
             ToolTip, CrashReporter, Project,
-            Localized
+            Localized, URI, MediaUtil
           ){
 
     var __guid = 0;
@@ -77,6 +85,7 @@ window.Butter = {
           _defaultConfig,
           _defaultTarget,
           _this = Object.create( Butter ),
+          _isReady = false,
           _selectedEvents = [],
           _copiedEvents = [],
           _pluginDefaults = {},
@@ -137,28 +146,46 @@ window.Butter = {
         return _currentMedia.getManifest( name );
       }; //getManifest
 
-      _this.generateSafeTrackEvent = function( type, popcornOptions, track, position ) {
-        var trackEvent,
+      _this.generateSafeTrackEvent = function( options, callback ) {
+
+        options = options || {};
+
+        if ( !options.type ) {
+          console.warn( "No plugin type was specified!" );
+          return;
+        }
+
+        callback = callback || function(){};
+
+        var type = options.type,
+            popcornOptions = options.popcornOptions,
+            track = options.track,
+            position = options.position,
+            trackEvent,
             relativePosition,
             start = popcornOptions.start,
             end = popcornOptions.end;
 
-        if ( start + _defaultTrackeventDuration > _currentMedia.duration ) {
-          start = _currentMedia.duration - _defaultTrackeventDuration;
-        }
+        function addEvent() {
+          if ( !_defaultTarget ) {
+            console.warn( "No targets to drop events!" );
+            return;
+          }
 
-        if ( start < 0 ) {
-          start = 0;
-        }
+          if ( !( track instanceof Track ) ) {
+            if ( track && track.constructor === Array ) {
+              position = track;
+            }
+            track = _currentMedia.orderedTracks[ 0 ];
+          }
 
-        if ( !end && end !== 0 ) {
-          end = start + _defaultTrackeventDuration;
-        }
+          track = track || _currentMedia.addTrack();
 
-        if ( end > _currentMedia.duration ) {
-          end = _currentMedia.duration;
-        }
+          if ( track.findOverlappingTrackEvent( start, end ) ) {
+            track = _currentMedia.insertTrackBefore( track );
+          }
 
+//<<<<<<< HEAD
         /*if( type === "toc" ) {
           end = 0;
         }*/
@@ -167,46 +194,78 @@ window.Butter = {
           console.warn( "No targets to drop events!" );
           return;
         }
+//=======
+          popcornOptions.start = start;
+          popcornOptions.end = end;
+          popcornOptions.target = _defaultTarget.elementID;
+//>>>>>>> mozilla/master
 
-        if ( !( track instanceof Track ) ) {
-          if ( track && track.constructor === Array ) {
-            position = track;
+          if ( position ) {
+            relativePosition = getRelativePosition( position, type );
+            popcornOptions.left = relativePosition[ 0 ];
+            popcornOptions.top = relativePosition[ 1 ];
           }
-          track = _currentMedia.orderedTracks[ 0 ];
+
+          trackEvent = track.addTrackEvent({
+            popcornOptions: popcornOptions,
+            type: type,
+            defaults: _this.pluginDefaults[ type ]
+          });
+
+          trackEvent.selected = true;
+
+          _defaultTarget.view.blink();
+
+          callback( trackEvent );
         }
 
-        track = track || _currentMedia.addTrack();
+        if ( type === "sequencer" ) {
+          var playWhenReady = false;
 
-        if ( track.findOverlappingTrackEvent( start, end ) ) {
-          track = _currentMedia.insertTrackBefore( track );
+          if ( end > _currentMedia.duration ) {
+            _this.listen( "mediaready", function onMediaReady() {
+              _this.unlisten( "mediaready", onMediaReady );
+              if ( playWhenReady ) {
+                _currentMedia.play();
+              }
+
+              addEvent();
+            });
+
+            playWhenReady = !_currentMedia.paused;
+            _currentMedia.url = "#t=," + end;
+          } else {
+            addEvent();
+          }
+        } else {
+          if ( start + _defaultTrackeventDuration > _currentMedia.duration ) {
+            start = _currentMedia.duration - _defaultTrackeventDuration;
+          }
+
+          if ( start < 0 ) {
+            start = 0;
+          }
+
+          if ( !end && end !== 0 ) {
+            end = start + _defaultTrackeventDuration;
+          }
+
+          if ( end > _currentMedia.duration ) {
+            end = _currentMedia.duration;
+          }
+
+          addEvent();
         }
-
-        popcornOptions.start = start;
-        popcornOptions.end = end;
-        popcornOptions.target = _defaultTarget.elementID;
-
-        if ( position ) {
-          relativePosition = getRelativePosition( position, type );
-          popcornOptions.left = relativePosition[ 0 ];
-          popcornOptions.top = relativePosition[ 1 ];
-        }
-
-        trackEvent = track.addTrackEvent({
-          popcornOptions: popcornOptions,
-          type: type,
-          defaults: _this.pluginDefaults[ type ]
-        });
-
-        trackEvent.selected = true;
-
-        _defaultTarget.view.blink();
 
         return trackEvent;
       };
 
+      function addCallback( trackEvent ) {
+        _this.editor.editTrackEvent( trackEvent );
+      }
+
       function targetTrackEventRequested( e ) {
-        var trackEvent,
-            popcornOptions = {},
+        var popcornOptions = {},
             start = _currentMedia.currentTime;
 
         popcornOptions.start = start;
@@ -224,8 +283,12 @@ window.Butter = {
             popcornOptions.end = popcornOptions.end + start;
           }
           _this.deselectAllTrackEvents();
-          trackEvent = _this.generateSafeTrackEvent( e.data.element.getAttribute( "data-popcorn-plugin-type" ), popcornOptions, e.data.position );
-          _this.editor.editTrackEvent( trackEvent );
+
+          _this.generateSafeTrackEvent({
+            type: e.data.element.getAttribute( "data-popcorn-plugin-type" ),
+            popcornOptions: popcornOptions,
+            position: e.data.position
+          }, addCallback );
         }
         else {
           _logger.log( "Warning: No media to add dropped trackevent." );
@@ -233,11 +296,15 @@ window.Butter = {
       }
 
       function mediaTrackEventRequested( e ) {
-        var trackEvent;
+
         if ( _currentMedia.ready ) {
           _this.deselectAllTrackEvents();
-          trackEvent = _this.generateSafeTrackEvent( e.data.getAttribute( "data-popcorn-plugin-type" ), _currentMedia.currentTime );
-          _this.editor.editTrackEvent( trackEvent );
+          _this.generateSafeTrackEvent({
+            type: e.data.getAttribute( "data-popcorn-plugin-type" ),
+            popcornOptions: {
+              start: _currentMedia.currentTime
+            }
+          }, addCallback );
         }
       }
 
@@ -316,7 +383,11 @@ window.Butter = {
       _this.pasteTrackEvents = function() {
         var popcornOptions,
             offset = 0,
-            trackEvent, trackIndex, track;
+            trackIndex, track;
+
+        function selectEvent( trackEvent ) {
+          trackEvent.selected = true;
+        }
         // get the first events start time to compare with the current time,
         // to find the paste offset.
         if ( _copiedEvents[ 0 ] ) {
@@ -341,8 +412,11 @@ window.Butter = {
             trackIndex = _currentMedia.maxPluginZIndex - popcornOptions.zindex;
             track = _currentMedia.orderedTracks[ trackIndex ];
 
-            trackEvent = _this.generateSafeTrackEvent( _copiedEvents[ i ].type, popcornOptions, track );
-            trackEvent.selected = true;
+            _this.generateSafeTrackEvent({
+              type: _copiedEvents[ i ].type,
+              popcornOptions: popcornOptions,
+              track: track
+            }, selectEvent );
           }
         }
       };
@@ -417,6 +491,15 @@ window.Butter = {
         return undefined;
       }; //getMediaByType
 
+      _this.getMediaById = function( id ) {
+        for ( var i = 0; i < _media.length; i++ ) {
+          if ( id === _media[ i ].id ) {
+            return _media[ i ];
+          }
+        }
+        return undefined;
+      };
+
       //addMedia - add a media object
       _this.addMedia = function ( media ) {
         if ( !( media instanceof Media ) ) {
@@ -433,7 +516,6 @@ window.Butter = {
         _media.push( media );
 
         _this.chain( media, [
-          "mediacontentchanged",
           "mediadurationchanged",
           "mediatargetchanged",
           "mediatimeupdate",
@@ -441,7 +523,10 @@ window.Butter = {
           "trackadded",
           "trackremoved",
           "tracktargetchanged",
+          "trackorderchanged",
+          "tracknamechanged",
           "trackeventadded",
+          "trackeventeditorclose",
           "trackeventremoved",
           "trackeventupdated",
           "trackorderchanged"
@@ -474,45 +559,6 @@ window.Butter = {
         return media;
       }; //addMedia
 
-      //removeMedia - forget a media object
-      _this.removeMedia = function ( media ) {
-
-        var idx = _media.indexOf( media );
-        if ( idx > -1 ) {
-          _media.splice( idx, 1 );
-          _this.unchain( media, [
-            "mediacontentchanged",
-            "mediadurationchanged",
-            "mediatargetchanged",
-            "mediatimeupdate",
-            "mediaready",
-            "trackadded",
-            "trackremoved",
-            "tracktargetchanged",
-            "trackeventadded",
-            "trackeventremoved",
-            "trackeventupdated",
-            "trackorderchanged"
-          ]);
-          var tracks = media.tracks;
-          for ( var i=0, l=tracks.length; i<l; ++i ) {
-            _this.dispatch( "trackremoved", tracks[ i ] );
-          } //for
-          if ( media === _currentMedia ) {
-            _currentMedia = undefined;
-          } //if
-
-          media.unlisten( "trackeventadded", onTrackEventAdded );
-          media.unlisten( "trackeventremoved", onTrackEventRemoved );
-
-          media.unlisten( "trackeventrequested", mediaTrackEventRequested );
-
-          _this.dispatch( "mediaremoved", media );
-          return media;
-        } //if
-        return undefined;
-      }; //removeMedia
-
       /****************************************************************
        * Trackevents
        ****************************************************************/
@@ -544,6 +590,18 @@ window.Butter = {
         return _this.getTrackEvents( "type", query );
       };
 
+      /****************************************************************
+       * Tracks
+       ****************************************************************/
+      _this.getTrackById = function( id ) {
+        for ( var i = 0; i < _media.length; i++ ) {
+          var track = _media[ i ].getTrackById( id );
+          if ( track ) {
+            return track;
+          }
+        }
+        return undefined;
+      };
       /****************************************************************
        * Properties
        ****************************************************************/
@@ -653,6 +711,12 @@ window.Butter = {
           enumerable: true,
           get: function() {
             return _defaultTrackeventDuration;
+          }
+        },
+        isReady: {
+          enumerable: true,
+          get: function() {
+            return _isReady;
           }
         }
       });
@@ -811,11 +875,13 @@ window.Butter = {
         var savedDataUrl,
             remixOrEdit = "",
             item = [],
-            project = new Project( _this );
+            project = new Project( _this ),
+            parsedUri = URI.parse( window.location ),
+            qs = parsedUri.queryKey;
 
         // see if savedDataUrl is in the page's query string
         // using query string here is kept for backwards comp
-        window.location.search.substring( 1 ).split( "&" ).forEach(function( item ){
+        parsedUri.query.split( "&" ).forEach(function( item ){
           item = item.split( "=" );
           if ( item && item[ 0 ] === "savedDataUrl" ) {
             savedDataUrl = item[ 1 ];
@@ -829,7 +895,7 @@ window.Butter = {
 
         // the new way to load a project is with /editor/:id/edit
         if ( !savedDataUrl ) {
-          var pathname = window.location.pathname.replace( "/" + Localized.getCurrentLang() + "/", "/" );
+          var pathname = parsedUri.path.replace( "/" + Localized.getCurrentLang() + "/", "/" );
           item = pathname.split( "/" );
           // item[ 2 ] is the id
           if ( item[ 2 ] ) {
@@ -854,14 +920,70 @@ window.Butter = {
           }
         }
 
+        function projectDataReady( savedData ) {
+          if ( savedData ) {
+            doImport( savedData );
+          }
+          finishedCallback( project );
+        }
+
         function loadConfigDefault() {
           // if previous attempt failed,
           // try loading data from the savedDataUrl value in the config
           loadFromSavedDataUrl( _config.value( "savedDataUrl" ), function( savedData ) {
-            if ( savedData ) {
-              doImport( savedData );
+            var initialMediaSource;
+
+            if ( !qs.initialMedia ) {
+              return projectDataReady( savedData );
             }
-            finishedCallback( project );
+
+            initialMediaSource = decodeURIComponent( qs.initialMedia );
+
+            // If we successfully retrieve data for that initial media we will hand write it
+            // into the default project data before the import.
+            MediaUtil.getMetaData( initialMediaSource, function onSuccess( data ) {
+              var media = savedData.media[ 0 ],
+                  track;
+
+              if ( media ) {
+                media.url = "#t=," + data.duration;
+                media.duration = data.duration;
+
+                track = media.tracks[ 0 ];
+
+                if ( track ) {
+                  track.trackEvents.push({
+                    id: "TrackEvent1",
+                    type: "sequencer",
+                    popcornOptions: {
+                      source: [ data.source ],
+                      start: 0,
+                      end: data.duration,
+                      title: data.title,
+                      from: data.from,
+                      duration: data.duration,
+                      target: "video-container",
+                      fallback: "",
+                      zindex: 1000,
+                      id: "TrackEvent1",
+                      thumbnailSrc: data.thumbnail
+                    }
+                  });
+
+                  media.clipData = media.clipData || {};
+
+                  // Don't forget to add the clip data!
+                  if ( !media.clipData[ data.source ] ) {
+                    media.clipData[ data.source ] = data;
+                  }
+
+                  projectDataReady( savedData );
+                }
+              }
+            },
+            function onError() {
+              projectDataReady( savedData );
+            });
           });
         }
 
@@ -870,25 +992,6 @@ window.Butter = {
           // if there's no savedData returned, or the returned object does not
           // contain a media attribute, load the config specified saved data
           if ( !savedData || savedData.error || !savedData.media ) {
-            // If nothing comes back, it means we're trying to edit a page we don't own.
-            // Try a remix.
-            // This is covering edits for projects they don't own or if they aren't logged in.
-            if ( remixOrEdit === "edit" &&
-               ( savedData.message === "unauthorized" || savedData.message === "Not Found" ) ) {
-              remixOrEdit = "remix";
-              loadFromSavedDataUrl( "/api/remix/" + item[ 2 ], function( savedData ) {
-                if ( savedData && !savedData.error ) {
-                  doImport( savedData );
-                  finishedCallback( project );
-                  return;
-                }
-                // If we hit this there was an error trying to remix. This means the project
-                // most likely didn't exist at all. Use template default.
-                loadConfigDefault();
-                return;
-              });
-              return;
-            }
             return loadConfigDefault();
           }
 
@@ -934,6 +1037,7 @@ var jsonSavedData = JSON.stringify(savedData);
                     _this.chain( project, [ "projectchanged", "projectsaved" ] );
 
                     // Fire the ready event
+                    _isReady = true;
                     _this.dispatch( "ready", _this );
                   }
 

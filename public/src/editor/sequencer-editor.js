@@ -2,9 +2,9 @@
  * If a copy of the MIT license was not distributed with this file, you can
  * obtain one at https://raw.github.com/mozilla/butter/master/LICENSE */
 
-define( [ "util/mediatypes", "editor/editor", "util/time",
+define( [ "localized", "util/mediatypes", "editor/editor", "util/time",
           "util/uri", "ui/widget/textbox", "l10n!/layouts/sequencer-editor.html"  ],
-  function( MediaUtils, Editor, Time, URI, Textbox, LAYOUT_SRC ) {
+  function( Localized, MediaUtils, Editor, Time, URI, Textbox, LAYOUT_SRC ) {
 
   Editor.register( "sequencer", LAYOUT_SRC,
     function( rootElement, butter ) {
@@ -52,7 +52,7 @@ define( [ "util/mediatypes", "editor/editor", "util/time",
 
         return {
           el: el,
-          updateUI: updateUI,
+          updateUI: updateUI
         };
 
       }
@@ -427,7 +427,11 @@ define( [ "util/mediatypes", "editor/editor", "util/time",
 
         if ( _mediaType === "HTML5" ) {
           fallbackContainer.classList.add( "show" );
-        } else if ( _mediaType === "SoundCloud" ) {
+        }
+
+        if ( _mediaType === "SoundCloud" ||
+             _popcornOptions.contentType.indexOf( "audio" ) === 0 ||
+             _popcornOptions.contentType.indexOf( "application/ogg" ) === 0 ) {
           videoToggleContainer.classList.add( "butter-hidden" );
           fallbackContainer.classList.remove( "show" );
         } else {
@@ -502,6 +506,31 @@ define( [ "util/mediatypes", "editor/editor", "util/time",
       close: function() {
         _trackEvent.unlisten( "trackeventupdated", onTrackEventUpdated );
       }
+    });
+  }, false, function( trackEvent ) {
+    var _container,
+        _popcornOptions,
+        _dragOptions = {
+          disableTooltip: true,
+          editable: false
+        },
+        _target;
+
+    _popcornOptions = trackEvent.popcornTrackEvent;
+    _container = _popcornOptions._container;
+    _target = _popcornOptions._target;
+
+    if ( MediaUtils.checkUrl( _popcornOptions.source[ 0 ] ) === "YouTube" ) {
+      _dragOptions.disableTooltip = false;
+      _dragOptions.editable = true;
+      _dragOptions.tooltip = Localized.get( "Double click to close ads" );
+    }
+
+    this.draggable( trackEvent, _container, _target, _dragOptions );
+    this.resizable( trackEvent, _container, _target, {
+      handlePositions: "n,ne,e,se,s,sw,w,nw",
+      minWidth: 10,
+      minHeight: 10
     });
   });
 });

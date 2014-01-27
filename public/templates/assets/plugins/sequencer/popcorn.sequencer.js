@@ -157,6 +157,8 @@
         _this.on( "volumechange", options._volumeEvent );
         if ( options.active ) {
           options._startEvent();
+        } else {
+          options._setClipCurrentTime( +options.from );
         }
       };
 
@@ -185,6 +187,11 @@
 
       options.attemptJWPlayer = function() {
         options._clip.off( "error", options.attemptJWPlayer );
+        if ( !options._clip.error ) {
+          // For some reason html5 media clips are throwing error events,
+          // with no actual error, only in the embed...
+          return;
+        }
         var jwDiv = document.createElement( "div" );
         // Remove the dead html5 video element.
         options._container.removeChild( document.getElementById( options._clip.media.id ) );
@@ -242,7 +249,12 @@
         }
 
         for ( var i = 0; i < options.source.length; i++ ) {
-          options.source[ i ] = options.source[ i ].trim().split( " " ).join( "" );
+          var value = options.source[ i ],
+              split = value.split( "?" ),
+              querystring = split[ 1 ];
+
+          value = split[ 0 ].trim();
+          options.source[ i ] = querystring ? value + "?" + querystring : value;
         }
 
         options._clip = Popcorn.smart( options._container, options.source, { frameAnimation: true } );
@@ -461,10 +473,6 @@
           loadingHandler.add( options, options.addSource );
         }
       }
-      if ( updates.hasOwnProperty( "mute" ) ) {
-        options.mute = updates.mute;
-        options._volumeEvent();
-      }
       if ( updates.hasOwnProperty( "top" ) ) {
         options.top = updates.top;
         options._container.style.top = ( options.top || "0" ) + "%";
@@ -482,6 +490,10 @@
         options._container.style.width = ( options.width || "100" ) + "%";
       }
       if ( options.ready ) {
+        if ( updates.hasOwnProperty( "mute" ) ) {
+          options.mute = updates.mute;
+          options._volumeEvent();
+        }
         if ( updates.hasOwnProperty( "volume" ) ) {
           options.volume = updates.volume;
           options._volumeEvent();
@@ -638,6 +650,10 @@
           "default": 0
         },
         linkback: {
+          hidden: true,
+          "default": ""
+        },
+        contentType: {
           hidden: true,
           "default": ""
         }

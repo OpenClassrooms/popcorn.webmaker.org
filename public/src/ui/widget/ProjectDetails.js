@@ -12,12 +12,16 @@ define( [ "util/keys", "ui/widget/tooltip", "localized", "ui/widget/textbox" ],
         _thumbnailInput,
         _thumbnailUl;
 
-    function addThumbnail( url ) {
+    function addThumbnail( url, dropArea ) {
       var li = document.createElement( "li" ),
           image = _thumbnailUl.querySelector( "[data-source='" + url + "']" );
 
       if ( image ) {
         return;
+      }
+
+      if ( dropArea ) {
+        dropArea.querySelector( "img" ).src = url;
       }
 
       li.setAttribute( "data-source", url );
@@ -32,6 +36,11 @@ define( [ "util/keys", "ui/widget/tooltip", "localized", "ui/widget/textbox" ],
 
         e.target.classList.add( "selected" );
         _butter.project.thumbnail = source;
+
+        if ( dropArea ) {
+          dropArea.querySelector( "img" ).src = source;
+        }
+
         _thumbnailInput.value = _butter.project.thumbnail;
       }, false );
 
@@ -90,7 +99,7 @@ define( [ "util/keys", "ui/widget/tooltip", "localized", "ui/widget/textbox" ],
                 _butter.project.tags = checkTags( currentProjectTags.join( "," ) );
               }
 
-              li.innerHTML = decodeURIComponent( val );
+              li.textContent = decodeURIComponent( val );
               ul.appendChild( li );
             }
           }
@@ -139,9 +148,7 @@ define( [ "util/keys", "ui/widget/tooltip", "localized", "ui/widget/textbox" ],
         }
       },
 
-      thumbnail: function( container ) {
-       var source,
-           events;
+      thumbnail: function( container, dropArea ) {
         _thumbnailInput = container.querySelector( ".thumbnail-input" );
         _thumbnailUl = container.querySelector( ".thumbnail-choices" );
 
@@ -158,39 +165,39 @@ define( [ "util/keys", "ui/widget/tooltip", "localized", "ui/widget/textbox" ],
             // This means we only have one thumbnail and it's the default,
             // so we should make the new one the current thumbnail.
             if ( _thumbnailUl.childNodes.length === 1 && _butter.project.thumbnail.indexOf( "/resources/icons/fb-logo.png" ) >= 0 ) {
-              addThumbnail( src );
+              addThumbnail( src, dropArea );
               selectThumb( src );
               _butter.project.thumbnail = src;
             } else {
-              addThumbnail( src );
+              addThumbnail( src, dropArea );
             }
             return;
           }
         }
 
-        if ( !_thumbnailUl.childNodes.length ) {
-          events = _butter.getTrackEvents( "type", "image" ).concat( _butter.getTrackEvents( "type", "sequencer" ) );
+        _thumbnailInput.addEventListener( "blur", function( e ) {
+          var source = e.target.value;
 
-          for ( var i = 0; i < events.length; i++ ) {
-            source = events[ i ].popcornOptions.src || events[ i ].popcornOptions.thumbnailSrc;
-            if ( source ) {
-              if ( !_butter.project.thumbnail ) {
-                // Default it to something cool, if we can.
-                _butter.project.thumbnail = source;
-              }
-
-              addThumbnail( source );
-            }
+          if ( source !== _butter.project.thumbnail ) {
+            _butter.project.thumbnail = source;
+            addThumbnail( source, dropArea );
+            selectThumb( source );
           }
 
+/*<<<<<<< HEAD
           // Still no default,
           // so default it to something not as cool,
           // but still pretty cool.
           if ( !_butter.project.thumbnail ) {
             _butter.project.thumbnail = location.protocol + "//" + location.host + "/resources/icons/logo_openclassrooms_retina.png";
           }
+=======*/
+        }, false );
 
-          addThumbnail( _butter.project.thumbnail );
+        if ( !_thumbnailUl.childNodes.length ) {
+//>>>>>>> mozilla/master
+
+          addThumbnail( _butter.project.thumbnail, dropArea );
           selectThumb( _butter.project.thumbnail );
 
           _butter.listen( "trackeventadded", trackEventHandle );

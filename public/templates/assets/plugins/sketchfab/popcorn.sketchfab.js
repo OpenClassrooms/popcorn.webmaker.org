@@ -11,7 +11,7 @@
   }
 
   function setupIframe( options ) {
-    var iframe, src, iframeOptions;
+    var iframe, src;
 
     if ( options._sketchfabAPI ) {
       options._sketchfabAPI._preventStartFlag = true;
@@ -28,9 +28,9 @@
     }
 
     if ( options.src ) {
-      src = options.src.match( /sketchfab\.com\/show\/([A-Za-z0-9]{9,27})|^([A-Za-z0-9]{9,27})$/ );
+      src = options.src.match( /(https?:\/\/sketchfab\.com\/show\/)?(\w+)/ );
       if ( src ) {
-        src = src[ src.length - 1 ] || src[ src.length - 2 ];
+        src = src[ src.length - 1 ];
 
         options._iframe = iframe = document.createElement( "iframe" );
         iframe.classList.add( "sketchfab-iframe" );
@@ -40,7 +40,7 @@
         var sketchfabOptions = {
           nocamera: 0,
           autostart: 1,
-          autospin: 0,
+          autospin: ( options.autospin ? "1" : "0" ),
           transparent: ( options.background ? "0" : "1" ),
           controls: 0,
           watermark: 0,
@@ -48,7 +48,7 @@
           stop_button: 0
         };
 
-        SketchfabQuery.when( api.load( src, sketchfabOptions ) ).then( function( data ) {
+        SketchfabQuery.when( api.load( src, sketchfabOptions ) ).then( function() {
           if ( !api._preventStartFlag ) {
             api.start();
           }
@@ -157,6 +157,11 @@
         resetIframe = true;
       }
 
+      if ( [ true, false ].indexOf( options.autospin ) > -1 && options.autospin !== trackEvent.autospin ) {
+        trackEvent.autospin = options.autospin;
+        resetIframe = true;
+      }
+
       if ( resetIframe ) {
         setupIframe( trackEvent );
       }
@@ -213,6 +218,12 @@
         elem: "input",
         type: "checkbox",
         label: "Background (Transparency)",
+        "default": false
+      },
+      autospin: {
+        elem: "input",
+        type: "checkbox",
+        label: "Automatically Spin Model",
         "default": false
       },
       width: {

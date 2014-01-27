@@ -2,9 +2,9 @@
  * If a copy of the MIT license was not distributed with this file, you can
  * obtain one at https://raw.github.com/mozilla/butter/master/LICENSE */
 
-define( [ "core/logger", "core/eventmanager", "util/dragndrop",
+define( [ "localized", "core/logger", "core/eventmanager", "util/dragndrop",
           "util/lang", "text!layouts/trackevent.html" ],
-  function( Logger, EventManager, DragNDrop,
+  function( Localized, Logger, EventManager, DragNDrop,
             LangUtils, TRACKEVENT_LAYOUT ) {
 
   var TRACKEVENT_MIN_WIDTH = 50;
@@ -86,7 +86,7 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop",
      * Used to notify the user when a trackevent overlaps and where the new location will be
      * when the trackevent is dropped
      */
-    this.createGhost = function() {
+    this.createGhost = function( left ) {
       if ( _ghost ) {
         return _ghost;
       }
@@ -96,8 +96,11 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop",
 
       // Copy the `left` attribute here, once. Successive updates are done using
       // the translate transform property.
-      clone.style.left = _element.style.left;
-
+      if ( left || left === 0 ) {
+        clone.style.left = left + "px";
+      } else {
+        clone.style.left = _element.style.left;
+      }
       clone.classList.add( "butter-track-event-ghost" );
       LangUtils.setTransformProperty( clone, "" );
 
@@ -191,7 +194,7 @@ define( [ "core/logger", "core/eventmanager", "util/dragndrop",
         },
         set: function( val ) {
           _elementText = val;
-          _typeElement.innerHTML = _elementText;
+          _typeElement.innerHTML = Localized.get( _elementText ) || _elementText;
         }
       },
       selected: {

@@ -5,20 +5,22 @@
 define([ "localized", "editor/editor", "editor/base-editor",
           "l10n!/layouts/project-editor.html",
           "util/social-media", "ui/widget/textbox",
-          "ui/widget/tooltip", "util/keys", "ui/widget/ProjectDetails" ],
-  function( Localized, Editor, BaseEditor, LAYOUT_SRC, SocialMedia, TextboxWrapper, ToolTip, KEYS, ProjectDetails ) {
+          "ui/widget/tooltip", "util/keys", "ui/widget/ProjectDetails", "editor/editorhelper" ],
+  function( Localized, Editor, BaseEditor, LAYOUT_SRC, SocialMedia, TextboxWrapper, ToolTip, KEYS, ProjectDetails, EditorHelper ) {
 
   Editor.register( "project-editor", LAYOUT_SRC, function( rootElement, butter ) {
 
     var _rootElement = rootElement,
         _socialMedia = new SocialMedia(),
         _projectURL = _rootElement.querySelector( ".butter-project-url" ),
-        _descriptionInput = _rootElement.querySelector( ".butter-project-description" ),
         _dropArea = _rootElement.querySelector( ".image-droparea" ),
         _backgroundInput = _rootElement.querySelector( ".butter-project-background-colour" ),
         _colorContainer = _rootElement.querySelector( ".color-container" ),
         _projectEmbedURL = _rootElement.querySelector( ".butter-project-embed-url" ),
         _embedSize = _rootElement.querySelector( ".butter-embed-size" ),
+        _embedPreload = _rootElement.querySelector( ".butter-embed-preload" ),
+        _embedSizeHeight = _rootElement.querySelector( ".butter-embed-size-height" ),
+        _embedSizeWidth = _rootElement.querySelector( ".butter-embed-size-width" ),
         _previewBtn = _rootElement.querySelector( ".butter-preview-link" ),
         _projectLinkUrl = _rootElement.querySelector( ".butter-project-url" ),
         _projectLinkButton = _rootElement.querySelector( ".butter-preview-link" ),
@@ -33,12 +35,18 @@ define([ "localized", "editor/editor", "editor/base-editor",
         _embedDimensions = _embedSize.value.split( "x" ),
         _embedWidth = _embedDimensions[ 0 ],
         _embedHeight = _embedDimensions[ 1 ],
+        _preloadString = "",
         _projectTabs = _rootElement.querySelectorAll( ".project-tab" ),
         _this = this,
         _numProjectTabs = _projectTabs.length,
         _project,
         _projectTab,
+        _projectDetails,
+        _editorHelper = new EditorHelper( butter ),
         _idx;
+
+    _embedSizeHeight.value = _embedHeight;
+    _embedSizeWidth.value = _embedWidth;
 
     _backgroundInput.value = butter.project.background ? butter.project.background : "#FFFFFF";
 
@@ -75,21 +83,47 @@ define([ "localized", "editor/editor", "editor/base-editor",
     }
 
     function updateEmbed( url ) {
-      _projectEmbedURL.value = "<iframe src='" + url + "' width='" + _embedWidth + "' height='" + _embedHeight + "'" +
+      _projectEmbedURL.value = "<iframe src='" + url + _preloadString + "' width='" + _embedWidth + "' height='" + _embedHeight + "'" +
       " frameborder='0' mozallowfullscreen webkitallowfullscreen allowfullscreen></iframe>";
     }
 
     _embedSize.addEventListener( "change", function() {
+      if ( _embedSize.value === "custom" ) {
+        return;
+      }
       _embedDimensions = _embedSize.value.split( "x" );
       _embedWidth = _embedDimensions[ 0 ];
       _embedHeight = _embedDimensions[ 1 ];
+      _embedSizeHeight.value = _embedHeight;
+      _embedSizeWidth.value = _embedWidth;
+      updateEmbed( butter.project.iframeUrl );
+    }, false );
+
+    _embedSizeWidth.addEventListener( "change", function() {
+      _embedSize.value = "custom";
+      _embedWidth = _embedDimensions[ 0 ] = _embedSizeWidth.value;
+      updateEmbed( butter.project.iframeUrl );
+    }, false );
+
+    _embedSizeHeight.addEventListener( "change", function() {
+      _embedSize.value = "custom";
+      _embedHeight = _embedDimensions[ 1 ] = _embedSizeHeight.value;
+      updateEmbed( butter.project.iframeUrl );
+    }, false );
+
+    _embedPreload.addEventListener( "change", function() {
+      if ( _embedPreload.checked ) {
+        _preloadString = "";
+      } else {
+        _preloadString = "?preload=none";
+      }
       updateEmbed( butter.project.iframeUrl );
     }, false );
 
     TextboxWrapper.applyTo( _projectURL, { readOnly: true } );
     TextboxWrapper.applyTo( _projectEmbedURL, { readOnly: true } );
 
-    window.EditorHelper.droppable( null, _dropArea );
+    _editorHelper.droppable( null, _dropArea );
 
     butter.listen( "droppable-unsupported", function unSupported() {
       _this.setErrorState( Localized.get( "Sorry, but your browser doesn't support this feature." ) );
@@ -101,9 +135,8 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
     butter.listen( "droppable-succeeded", function uploadSuceeded( e ) {
       _project.thumbnail = _dropArea.querySelector( "img" ).src = e.data;
-      _rootElement.querySelector( ".thumbnail-choices" ).value = _project.thumbnail;
-      ProjectDetails.addThumbnail( _project.thumbnail );
-      ProjectDetails.selectThumb( _project.thumbnail );
+      _projectDetails.addThumbnail( _project.thumbnail, _dropArea );
+      _projectDetails.selectThumb( _project.thumbnail );
     });
 
     function onProjectSaved() {
@@ -142,12 +175,9 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
     Editor.BaseEditor.extend( this, butter, rootElement, {
       open: function() {
-        var events,
-            source;
-
         _project = butter.project;
 
-        this.attachColorChangeHandler( _colorContainer, null, "background", function( te, options, message, prop ) {
+        this.attachColorChangeHandler( _colorContainer, null, "background", function( te, options, message ) {
           if ( message ) {
             _this.setErrorState( message );
             return;
@@ -168,10 +198,10 @@ define([ "localized", "editor/editor", "editor/base-editor",
         _viewSourceBtn.href = "view-source:" + _project.iframeUrl;
         updateEmbed( _project.iframeUrl );
 
-        var projectDetails = new ProjectDetails( butter );
-        projectDetails.tags( _settingsContainer );
-        projectDetails.thumbnail( _settingsContainer );
-        projectDetails.description( _settingsContainer );
+        _projectDetails = new ProjectDetails( butter );
+        _projectDetails.tags( _settingsContainer );
+        _projectDetails.thumbnail( _settingsContainer, _dropArea );
+        _projectDetails.description( _settingsContainer );
 
         _previewBtn.onclick = function() {
           return _project.isSaved && butter.cornfield.authenticated();

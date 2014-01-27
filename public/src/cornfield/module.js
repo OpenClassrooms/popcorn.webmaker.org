@@ -2,7 +2,7 @@
  * If a copy of the MIT license was not distributed with this file, you can
  * obtain one at https://raw.github.com/mozilla/butter/master/LICENSE */
 
-define( [ "util/xhr", "sso-include" ], function( xhr ) {
+define( [ "util/xhr", "localized", "sso-include" ], function( xhr, Localized ) {
 
   var Cornfield = function( butter ) {
 
@@ -15,7 +15,16 @@ define( [ "util/xhr", "sso-include" ], function( xhr ) {
         function finishCallback() {
           authenticated = true;
           username = webmakerUserName;
-          butter.dispatch( "authenticated" );
+
+          if ( butter.isReady ) {
+            return butter.dispatch( "authenticated" );
+          }
+
+          butter.listen( "ready", function onReady() {
+            butter.unlisten( "ready", onReady );
+
+            butter.dispatch( "authenticated" );
+          });
         }
         if ( butter.project && butter.project.id ) {
           xhr.get( "/api/project/" + butter.project.id, function( res ) {
@@ -95,7 +104,7 @@ define( [ "util/xhr", "sso-include" ], function( xhr ) {
       // received from the server.
       self.save = savePlaceholder;
 
-      var url = "/api/project/";
+      var url = "/" + Localized.getCurrentLang() + "/api/project/";
 
       if ( id ) {
         url += id;

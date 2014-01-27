@@ -197,7 +197,7 @@
           }
         } else {
 
-          var _inOuts,
+          var _inOuts = [],
               _lastVisible,
               _tagRefs = [];
 
@@ -209,7 +209,7 @@
             for ( ; i >= 0; i-- ) {
               io = _inOuts[ i ];
               ref = _tagRefs[ i ];
-              if ( currTime >= io[ "in" ] && currTime < io.out && ref.classList.contains( "image-plugin-hidden" ) ) {
+              if ( io && currTime >= io[ "in" ] && currTime < io.out && ref.classList.contains( "image-plugin-hidden" ) ) {
                 if ( _lastVisible ) {
                   _lastVisible.classList.add( "image-plugin-hidden" );
                 }
@@ -362,7 +362,8 @@
           elem: "input",
           type: "url",
           label: "Source URL",
-          "default": "https://popcorn.webmaker.org/resources/popcorn-logo.svg"
+          "default": "https://popcorn.webmaker.org/resources/popcorn-logo.svg",
+          FLICKR_SINGLE_CHECK: FLICKR_SINGLE_CHECK
         },
         linkSrc: {
           elem: "input",

@@ -49,11 +49,23 @@ define( [ "core/trackevent", "core/track", "core/eventmanager",
       _superScrollbar.resize();
     }
 
-    window.addEventListener( "resize", function() {
+    function onEditorOpened() {
+      _tracksContainer.update();
+      _timebar.update();
+    }
+
+    function onVerticalResize() {
+      _vScrollBar.update();
+      _timebar.update();
+    }
+
+    function onResize() {
       _vScrollBar.update();
       _timebar.update();
       _superScrollbar.resize();
-    }, false );
+    }
+
+    window.addEventListener( "resize", onResize, false );
 
     function onMediaTimeUpdate() {
       // Move the viewport to be centered around the scrubber
@@ -113,17 +125,13 @@ define( [ "core/trackevent", "core/track", "core/eventmanager",
       window.addEventListener( "mousemove", onTrackEventDragStarted, false );
     }
 
-    function onTrackEventSelected( e ) {
-      butter.editor.editTrackEvent( e.target );
-    }
-
     function onTrackEventDeselected( e ) {
       butter.editor.closeTrackEventEditor( e.target );
     }
 
     function onMediaReady(){
       updateUI();
-      _timebar.enable();
+      _timebar.ready();
       _media.currentTime = 0;
     }
 
@@ -139,17 +147,21 @@ define( [ "core/trackevent", "core/track", "core/eventmanager",
 
       butter.ui.tray.setMediaInstance( _rootElement );
 
-      _media.listen( "trackeventremoved", function( e ){
-        var trackEvent = e.data;
-        trackEvent.view.unlisten( "trackeventmousedown", onTrackEventMouseDown );
-        trackEvent.unlisten( "trackeventselected", onTrackEventSelected );
-        trackEvent.unlisten( "trackeventdeselected", onTrackEventDeselected );
-      });
-
       function onTrackEventAdded( e ){
         var trackEvent = e.data;
+        function onTrackEventClicked() {
+          butter.editor.editTrackEvent( trackEvent );
+        }
+
+        _media.listen( "trackeventremoved", function( e ){
+          var trackEvent = e.data;
+          trackEvent.view.unlisten( "trackeventmousedown", onTrackEventMouseDown );
+          trackEvent.view.element.removeEventListener( "mousedown", onTrackEventClicked, false );
+          trackEvent.unlisten( "trackeventdeselected", onTrackEventDeselected );
+        });
+
         trackEvent.view.listen( "trackeventmousedown", onTrackEventMouseDown );
-        trackEvent.listen( "trackeventselected", onTrackEventSelected );
+        trackEvent.view.element.addEventListener( "mousedown", onTrackEventClicked, false );
         trackEvent.listen( "trackeventdeselected", onTrackEventDeselected );
       }
 
@@ -192,16 +204,14 @@ define( [ "core/trackevent", "core/track", "core/eventmanager",
     _media.listen( "mediaready", onMediaReadyFirst );
 
     butter.editor.listen( "editortoggled", onEditorToggled );
-    butter.listen( "editoropened", onEditorToggled );
-    _media.listen( "mediacontentchanged", _timebar.disable );
+    butter.listen( "editoropened", onEditorOpened );
 
     function onPluginDropped( e ) {
       var type = e.data.type,
           track = e.data.track,
           start = e.data.start,
           end = e.data.end,
-          popcornOptions = {},
-          trackEvent;
+          popcornOptions = {};
 
       popcornOptions.start = start;
       popcornOptions.end = end;
@@ -214,23 +224,22 @@ define( [ "core/trackevent", "core/track", "core/eventmanager",
         }
       }
 
+      function addCallback( trackEvent ) {
+        butter.editor.editTrackEvent( trackEvent );
+      }
+
       if ( _media.ready ) {
         if ( popcornOptions && popcornOptions.end ) {
           popcornOptions.end = popcornOptions.end + start;
         }
         butter.deselectAllTrackEvents();
-        trackEvent = butter.generateSafeTrackEvent( type, popcornOptions, track );
-        butter.editor.editTrackEvent( trackEvent );
+        butter.generateSafeTrackEvent({
+          type: type,
+          popcornOptions: popcornOptions,
+          track: track
+        }, addCallback );
       }
     }
-
-    this.destroy = function() {
-      if ( _rootElement.parentNode ) {
-        _rootElement.parentNode.removeChild( _rootElement );
-      }
-      butter.editor.unlisten( "editortoggled", onEditorToggled );
-      butter.unlisten( "editoropened", onEditorToggled );
-    };
 
     this.hide = function() {
       _rootElement.style.display = "none";
@@ -257,6 +266,7 @@ define( [ "core/trackevent", "core/track", "core/eventmanager",
     this.trackContainer = _tracksContainer;
     this.element = _rootElement;
     this.media = _media;
+    this.verticalResize = onVerticalResize;
   }
 
   return MediaInstance;

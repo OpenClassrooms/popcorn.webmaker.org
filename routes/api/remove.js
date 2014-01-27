@@ -39,16 +39,17 @@ module.exports = function( req, res, next ) {
       publishUrl,
       publishUrlEdit,
       publishUrlRemix
-    ], removeUrl, function( err, results ) {
+    ], removeUrl, function( err ) {
       if ( err ) {
         return next( utils.error( 500, err.toString() ) );
       }
 
-      metrics.increment( "project.delete" );
+      metrics.increment( "project.delete.success" );
       res.json( { error: "okay" }, 200 );
     });
   })
   .error(function( err ) {
+    metrics.increment( "project.s3.delete.error" );
     next( utils.error( 500, err.toString() ) );
   });
 };

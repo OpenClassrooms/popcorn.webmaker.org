@@ -17,4 +17,7 @@
 /node_modules/
 /published/
 bower_components/
-/public/external/popcorn-js.BACKUP.7165/
+locale/
+!locale/en_US/*
+!locale/localeinfo.json
+public/external/popcorn-js.BACKUP.7165/

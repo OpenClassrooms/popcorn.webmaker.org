@@ -100,7 +100,7 @@ define( [ "util/time", "util/keys" ], function( util, Keys ){
       }
     }
 
-    function onDurationClick( e ) {
+    function onDurationClick() {
       _durationInput.removeEventListener( "click", onDurationClick, false );
       _durationInput.classList.add( "input-active" );
 
@@ -164,10 +164,6 @@ define( [ "util/time", "util/keys" ], function( util, Keys ){
     });
 
     _media.listen( "mediapause", function(){
-      _playButton.state = true;
-    });
-
-    _media.listen( "mediacontentchanged", function(){
       _playButton.state = true;
     });
 

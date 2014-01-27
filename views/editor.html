@@ -5,10 +5,13 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <meta name="viewport" content="width=device-width">
-  <meta name="X-CSRF-Token" content="{{csrf}}">
+  <meta name="csrf-token" content="{{csrf}}">
   <meta name="persona-email" content="{{personaEmail}}">
+  <link rel="stylesheet" href="/static/bower/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/bower/farbtastic/farbtastic.css">
   <link rel="stylesheet" href="/templates/basic/style.css">
   <link rel="stylesheet" href="{{config.user_bar}}/css/nav.css">
+
   <link rel="stylesheet" href="/templates/assets/css/jquery-ui/jquery.ui.butter.css" data-butter-exclude>
   <link rel="stylesheet" href="/templates/assets/css/jquery-nestable/jquery.nestable.css" data-butter-exclude>
 
@@ -22,10 +25,10 @@
   <link rel="stylesheet" href="/templates/assets/plugins/wikipedia/popcorn.wikipedia.css">
   <link rel="stylesheet" href="/templates/assets/plugins/sketchfab/popcorn.sketchfab.css">
 
-  <meta property="og:title" content="Popcorn Maker" data-butter-exclude>
-  <meta property="og:description" content="{{ gettext("ogDesc") }}" data-butter-exclude>
-  <meta property="og:type" content="website" data-butter-exclude>
-  <meta property="og:url" content="https://popcorn.webmaker.org" data-butter-exclude>
+  <meta property="og:title" content="Popcorn Maker">
+  <meta property="og:description" content="{{ gettext("ogDesc") }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://popcorn.webmaker.org">
   <meta property="og:site_name" content="Mozilla Webmaker">
   <meta property="og:image" content="https://popcorn.webmaker.org/resources/icons/fb-logo.png">
   <meta property="og:image:type" content="image/png">
@@ -45,7 +48,16 @@
       </div>
     </div>
   </div>
+  {% if togetherjsEnabled %}
+    <script type="text/javascript">
+      var TogetherJSConfig = {
+        disableWebRTC: true
+      };
+    </script>
+    <script src="{{ togetherjs }}/togetherjs-min.js"></script>
+  {% endif %}
   <script src="/src/butter.js"></script>
+<!--<<<<<< HEAD
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
   <script src="/static/bower/farbtastic/src/farbtastic.js"></script>
@@ -58,8 +70,10 @@
   <script src="/templates/assets/editors/toc/toc.js"></script>
   <script src="/templates/assets/editors/googlemap.js"></script>
   <script src="/templates/assets/editors/sequencer/sequencer.js"></script>
+=======
+>>>>>>> mozilla/master-->
   <script src="/templates/basic/template.js"></script>
-  <script src="/external/jquery-nestable/jquery.nestable.js"></script>
+  <!--script src="/external/jquery-nestable/jquery.nestable.js"></script-->
 
   <!-- References for player -->
   <script src="/external/jsonml/jsonml-html.js"></script>

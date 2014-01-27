@@ -3,6 +3,7 @@ var express = require('express'),
     async = require( "async" ),
     metrics = require( "../../lib/metrics" ),
     s3 = require( "../../lib/s3" ),
+    config = require( "../../lib/config" ),
     sanitizer = require( "../../lib/sanitizer" ),
     utilities = require( "../../lib/utilities" ),
     filestore = require('../../lib/file-store.js'),
@@ -43,12 +44,46 @@ function setupStore( storeConfig ) {
         id: res.locals.project.id,
         author: res.locals.project.author,
         title: res.locals.project.name,
+        webmakerURL: config.AUDIENCE,
         description: description,
         embedShellSrc: publishUrl,
         projectUrl: projectUrl,
         popcorn: utilities.generatePopcornString( projectData ),
         thumbnail: res.locals.project.thumbnail,
         background: res.locals.project.background
+      }, function( err, html ) {
+        var sanitized = sanitizer.compressHTMLEntities( html ),
+          embedPath = utilities.embedPath( req.session.username, res.locals.project.id );
+
+          console.log(embedPath);
+          console.log(config.publishStore.type);
+
+        if( config.publishStore.type == "local" ) {
+          stores.publish.write( embedPath, sanitized, asyncCallback );
+        }
+        else if( config.publishStore.type == "s3" ) {
+          s3.put( embedPath, {
+            "x-amz-acl": "public-read",
+            "Content-Length": Buffer.byteLength( sanitized, "utf8" ),
+            "Content-Type": "text/html; charset=UTF-8"
+          }).on( "error",
+            asyncCallback
+          ).on( "response", function( s3res ) {
+            if ( s3res.statusCode !== 200 ) {
+              return asyncCallback( "S3.writeEmbed returned HTTP " + s3res.statusCode );
+            }
+
+            asyncCallback();
+          }).end( sanitized );
+        }
+      });
+    },
+    function( asyncCallback ) {
+      res.render( "embed-timesheets.html", {
+        id: res.locals.project.id,
+        author: res.locals.project.author,
+        title: res.locals.project.name,
+        projectData: utilities.generateProjectDataString( projectData )
       }, function( err, html ) {
         var sanitized = sanitizer.compressHTMLEntities( html ),
           embedPath = utilities.embedPath( req.session.username, res.locals.project.id );
@@ -219,9 +254,10 @@ function setupStore( storeConfig ) {
           }).end( html );
         }
       });
-    },
-  ], function( err, results ) {
+    }
+  ], function( err ) {
     if ( err ) {
+      metrics.increment( "project.publish.error" );
       return res.json(500, { error: err });
     }
 
@@ -230,6 +266,6 @@ function setupStore( storeConfig ) {
       publishUrl: publishUrl,
       iframeUrl: iframeUrl
     });
-    metrics.increment( "project.publish" );
+    metrics.increment( "project.publish.success" );
   });
 };

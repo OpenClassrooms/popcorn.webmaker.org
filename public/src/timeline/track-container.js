@@ -7,6 +7,7 @@ define( [ "core/logger", "util/dragndrop", "./ghost-manager" ],
 
   var TWEEN_PERCENTAGE = 0.35,      // diminishing factor for tweening (see followCurrentTime)
       TWEEN_THRESHOLD = 10,         // threshold beyond which tweening occurs (see followCurrentTime)
+      TRACK_HEIGHT = 30,
       TRACKEVENT_BORDER_OFFSET = 2; // clientLeft prevents track events from being positioned side by
                                     // side, so factor it into our calculations.
 
@@ -16,7 +17,8 @@ define( [ "core/logger", "util/dragndrop", "./ghost-manager" ],
         _this = this;
 
     var _element = mediaInstanceRootElement.querySelector( ".tracks-container-wrapper" ),
-        _container = mediaInstanceRootElement.querySelector( ".tracks-container" );
+        _container = mediaInstanceRootElement.querySelector( ".tracks-container" ),
+        _boundingBoxElement = _element.querySelector( ".bounding-box-selection" );
 
     var _vScrollbar, _hScrollbar;
 
@@ -44,12 +46,85 @@ define( [ "core/logger", "util/dragndrop", "./ghost-manager" ],
     });
 
     DragNDrop.listen( "dropfinished", function() {
-      _media.cleanUpEmptyTracks();
       _vScrollbar.update();
     });
 
-    _container.addEventListener( "mousedown", function() {
-      butter.deselectAllTrackEvents();
+    var _startingPosition = [],
+        _containerRect = {},
+        _elementRect = {};
+
+    function boundingBoxMouseDown( e ) {
+      // Stops selecting while moving.
+      e.preventDefault();
+      _containerRect = _container.getBoundingClientRect();
+      _elementRect = _element.getBoundingClientRect();
+      _startingPosition = [ e.clientX, e.clientY ];
+      _element.removeEventListener( "mousedown", boundingBoxMouseDown, false );
+      window.addEventListener( "mousemove", boundingBoxMouseMove, false );
+      window.addEventListener( "mouseup", boundingBoxMouseUp, false );
+    }
+    function boundingBoxMouseMove( e ) {
+      var thisPosition = [ e.clientX, e.clientY ],
+          minLeft = Math.min( thisPosition[ 0 ], _startingPosition[ 0 ] ),
+          maxLeft = Math.max( thisPosition[ 0 ], _startingPosition[ 0 ] ),
+          minTop = Math.min( thisPosition[ 1 ], _startingPosition[ 1 ] ),
+          maxTop = Math.max( thisPosition[ 1 ], _startingPosition[ 1 ] ),
+          start = ( ( minLeft - _containerRect.left ) / _container.clientWidth ) * _media.duration,
+          end = ( ( maxLeft - _containerRect.left ) / _container.clientWidth ) * _media.duration,
+          trackStartIndex = Math.floor( ( minTop - _containerRect.top ) / TRACK_HEIGHT ),
+          trackEndIndex = Math.floor( ( maxTop - _containerRect.top ) / TRACK_HEIGHT ),
+          track = {},
+          trackEvents = {},
+          trackEvent = {},
+          trackEventOptions = {};
+
+      minLeft = Math.max( 0, minLeft - _elementRect.left );
+      minTop = Math.max( 0, minTop - _elementRect.top );
+      maxLeft = Math.min( _element.clientWidth, maxLeft - _elementRect.left );
+      maxTop = Math.min( _element.clientHeight, maxTop - _elementRect.top );
+
+      _boundingBoxElement.classList.remove( "hidden" );
+
+      _boundingBoxElement.style.top = minTop + "px";
+      _boundingBoxElement.style.height = maxTop - minTop + "px";
+
+      _boundingBoxElement.style.left = minLeft + "px";
+      _boundingBoxElement.style.width = maxLeft - minLeft + "px";
+
+      if ( !e.shiftKey ) {
+        butter.deselectAllTrackEvents();
+      }
+
+      for ( var i = trackStartIndex; i <= trackEndIndex; i++ ) {
+        track = _media.orderedTracks[ i ];
+        if ( !track ) {
+          continue;
+        }
+        trackEvents = track.trackEvents;
+        for ( var j = 0; j < trackEvents.length; j++ ) {
+          trackEvent = trackEvents[ j ];
+          trackEventOptions = trackEvent.popcornOptions;
+          if ( ( start <= trackEventOptions.end && end >= trackEventOptions.start ) ||
+               ( end >= trackEventOptions.start && start <= trackEventOptions.end ) ) {
+            trackEvent.selected = true;
+          }
+        }
+      }
+    }
+    function boundingBoxMouseUp() {
+      _startingPosition = [];
+      _boundingBoxElement.classList.add( "hidden" );
+      window.removeEventListener( "mousemove", boundingBoxMouseMove, false );
+      window.removeEventListener( "mouseup", boundingBoxMouseUp, false );
+      _element.addEventListener( "mousedown", boundingBoxMouseDown, false );
+    }
+
+    _element.addEventListener( "mousedown", boundingBoxMouseDown, false );
+
+    _container.addEventListener( "mousedown", function( e ) {
+      if ( !e.shiftKey ) {
+        butter.deselectAllTrackEvents();
+      }
     }, false );
 
     _droppable = DragNDrop.droppable( _element, {
@@ -143,12 +218,6 @@ define( [ "core/logger", "util/dragndrop", "./ghost-manager" ],
         //}
         trackView.duration = _media.duration;
         trackView.parent = _this;
-      }
-    });
-
-    butter.listen( "mediaremoved", function ( e ) {
-      if ( e.data === _media && _droppable ){
-        _droppable.destroy();
       }
     });
 

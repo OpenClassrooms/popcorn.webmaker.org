@@ -49,14 +49,16 @@ define( [ "localized", "util/dragndrop", "util/lang", "editor/editor", "l10n!/la
       });
 
       function onClick() {
-        var trackEvent;
-
         if ( butter.currentMedia.ready ) {
           butter.deselectAllTrackEvents();
-          trackEvent = butter.generateSafeTrackEvent( e.data.type, {
-            start: butter.currentTime
+          butter.generateSafeTrackEvent({
+            type: e.data.type,
+            popcornOptions: {
+              start: butter.currentTime
+            }
+          }, function( trackEvent ) {
+            butter.editor.editTrackEvent( trackEvent );
           });
-          butter.editor.editTrackEvent( trackEvent );
         }
       }
 

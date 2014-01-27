@@ -33,6 +33,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
         _tocTrackEvent,
         _tocOptions = {},
+        _tocPopcornOptions = {},
         _tocDisplayList = document.createElement( "ul" ),
 
         _mediaTrack,
@@ -724,10 +725,13 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
     function createTocTrackEvent() {
       if( !_tocTrackEvent ) {
-        _tocOptions.start = 0;
-        _tocOptions.end = _media.duration;
+        _tocPopcornOptions.start = 0;
+        _tocPopcornOptions.end = _media.duration;
+        _tocOptions.popcornOptions = _tocPopcornOptions;
+        _tocOptions.type = "toc";
+        _tocOptions.track = _tocTrack;
         // Create a toc track event
-        _tocTrackEvent = _butter.generateSafeTrackEvent( "toc", _tocOptions, _tocTrack );
+        _tocTrackEvent = _butter.generateSafeTrackEvent( _tocOptions );
       }
     }
 

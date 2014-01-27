@@ -1,27 +1,27 @@
 // Newrelic *must* be the first module loaded. Do not move this require module!
 if ( process.env.NEW_RELIC_HOME ) {
-  require( 'newrelic' );
+  require( "newrelic" );
 }
 
-var express = require('express'),
-    path = require('path'),
+var express = require( "express" ),
+    path = require( "path" ),
     helmet = require( "helmet" ),
-    nunjucks = require('nunjucks'),
-    nunjucksEnv = new nunjucks.Environment(new nunjucks.FileSystemLoader( __dirname + '/views' )),
+    nunjucks = require( "nunjucks" ),
+    nunjucksEnv = new nunjucks.Environment( new nunjucks.FileSystemLoader( __dirname + "/views" ) ),
     app = express(),
-    lessMiddleware = require( 'less-middleware' ),
-    requirejsMiddleware = require( 'requirejs-middleware' ),
-    config = require( './lib/config' ),
+    lessMiddleware = require( "less-middleware" ),
+    requirejsMiddleware = require( "requirejs-middleware" ),
+    config = require( "./lib/config" ),
     Project,
     filter,
-    sanitizer = require( './lib/sanitizer' ),
-    metrics = require('./lib/metrics.js'),
     middleware,
     APP_HOSTNAME = config.hostname,
     WWW_ROOT =  __dirname + '/public',
     WWW_PUBLISHED =  __dirname + '/published',
     i18n = require( 'webmaker-i18n' ),
-    emulate_s3 = config.S3_EMULATION || !config.S3_KEY;
+    emulate_s3 = config.S3_EMULATION || !config.S3_KEY,
+    messina,
+    logger;
 
 nunjucksEnv.addFilter( "instantiate", function( input ) {
     var tmpl = new nunjucks.Template( input );
@@ -30,34 +30,34 @@ nunjucksEnv.addFilter( "instantiate", function( input ) {
 
 nunjucksEnv.express( app );
 
-// List of supported languages - Please add them here in an alphabetical order
-var listDropdownLang = config.SUPPORTED_LANGS,
-    // We create another array based on listDropdownLang to use it in the i18n.middleware
-    // supported_language which will be modified from the i18n mapping function
-    supportedLanguages = listDropdownLang.slice(0);
-
-app.locals({
-  config: {
-    app_hostname: APP_HOSTNAME,
-    audience: config.AUDIENCE,
-    ga_account: config.GA_ACCOUNT,
-    ga_domain: config.GA_DOMAIN,
-    jwplayer_key: config.JWPLAYER_KEY,
-    make_endpoint: config.MAKE_ENDPOINT,
-    user_bar: config.USER_BAR,
-    sync_limit: config.SYNC_LIMIT
-  },
-  supportedLanguages: supportedLanguages,
-  listDropdownLang: listDropdownLang
-});
+app.disable( "x-powered-by" );
 
 app.configure( function() {
   var tmpDir = path.normalize( require( "os" ).tmpDir() + "/mozilla.butter/" );
 
-  app.use( express.logger( config.logger ) );
+  if ( config.ENABLE_GELF_LOGS ) {
+    messina = require( "messina" );
+    logger = messina( "popcorn.webmaker.org-" + config.NODE_ENV || "development" );
+    logger.init();
+    app.use( logger.middleware() );
+  } else {
+    app.use( express.logger( config.logger ) );
+  }
+
+  app.use( function( req, res, next ) {
+    var allowed = [ "/static/bower/font-awesome/font/" ];
+    for ( var i = 0; i < allowed.length; i++ ) {
+      if ( req.url.substring( 0, allowed[ i ].length ) === allowed[ i ] ) {
+        res.header( "Access-Control-Allow-Origin", "*" );
+      }
+    }
+    next();
+  });
   app.use( "/static/bower", express.static( path.join( __dirname, "/bower_components" ), {
     maxAge: "31556952000" // one year
   }));
+  app.use(helmet.iexss());
+  app.use(helmet.contentTypeOptions());
   if ( !!config.FORCE_SSL ) {
     app.use( helmet.hsts() );
     app.enable( "trust proxy" );
@@ -87,10 +87,6 @@ app.configure( function() {
         },
         "/src/embed.js": {
           include: [ "embed" ],
-          mainConfigFile: WWW_ROOT + "/src/popcorn.js",
-        },
-        "/templates/assets/editors/editorhelper.js": {
-          include: [ "../templates/assets/editors/editorhelper" ],
           mainConfigFile: WWW_ROOT + "/src/popcorn.js"
         }
       },
@@ -102,6 +98,9 @@ app.configure( function() {
         preserveLicenseComments: false,
         paths: {
           "localized": path.resolve( __dirname, "bower_components/webmaker-i18n/localized" ),
+          "jquery": path.resolve( __dirname, "bower_components/jquery/jquery.min" ),
+          "jquery-ui": path.resolve( __dirname, "bower_components/jquery-ui/ui/jquery-ui" ),
+          "farbtastic": path.resolve( __dirname, "bower_components/farbtastic/farbtastic" ),
           "WebmakerUI": path.resolve( __dirname, "bower_components/webmaker-ui/ui" ),
           "webmaker-ui-fragments": path.resolve( __dirname, "bower_components/webmaker-ui/webmaker-ui-fragments" )
         },
@@ -117,11 +116,27 @@ app.configure( function() {
 
   // Setup locales with i18n
   app.use( i18n.middleware({
-    supported_languages: supportedLanguages,
+    supported_languages: config.SUPPORTED_LANGS,
     default_lang: "en-US",
-    mappings: config.LANG_MAPPINGS,
+    mappings: require("webmaker-locale-mapping"),
     translation_directory: path.resolve( __dirname, "locale" )
   }));
+
+  app.locals({
+    config: {
+      app_hostname: APP_HOSTNAME,
+      audience: config.AUDIENCE,
+      ga_account: config.GA_ACCOUNT,
+      ga_domain: config.GA_DOMAIN,
+      jwplayer_key: config.JWPLAYER_KEY,
+      make_endpoint: config.MAKE_ENDPOINT,
+      node_hubble_endpoint: config.NODE_HUBBLE_ENDPOINT,
+      user_bar: config.USER_BAR,
+      sync_limit: config.SYNC_LIMIT
+    },
+    supportedLanguages: i18n.getLanguages(),
+    listDropdownLang: i18n.getSupportLanguages()
+  });
 
   app.use( express.json() )
     .use( express.urlencoded() )
@@ -134,17 +149,15 @@ app.configure( function() {
      * because the static file writes the response header before we hit this middleware
      */
     .use( function( req, res, next ) {
-      res.header( 'Cache-Control', 'no-store' );
+      res.header( "Cache-Control", "no-store" );
       return next();
     })
     .use( app.router )
-    .use( function( err, req, res, next) {
-      if ( !err.status ) {
-        err.status = 500;
-      }
-
+    /*jslint unused: false */
+    .use( function( err, req, res, next ) {
       middleware.errorHandler( err, req, res );
     })
+    /*jslint unused: false */
     .use( function( req, res, next ) {
       var err = {
         message: req.gettext( "This page doesn't exist" ),
@@ -154,16 +167,16 @@ app.configure( function() {
       middleware.errorHandler( err, req, res );
     });
 
-  Project = require( './lib/project' )( config.database );
-  filter = require( './lib/filter' )( Project.isDBOnline );
+  Project = require( "./lib/project" )( config.database );
+  filter = require( "./lib/filter" )( Project.isDBOnline );
 });
 
-require( './lib/loginapi' )( app, {
+require( "./lib/loginapi" )( app, {
   audience: config.AUDIENCE,
   loginURL: config.LOGIN_SERVER_URL_WITH_AUTH
 });
 
-require( 'webmaker-mediasync' )( app, {
+require( "webmaker-mediasync" )( app, {
   serviceKeys: {
     soundcloud: config.SYNC_SOUNDCLOUD,
     flickr: config.SYNC_FLICKR,
@@ -172,78 +185,80 @@ require( 'webmaker-mediasync' )( app, {
   limit: config.SYNC_LIMIT
 });
 
-middleware = require( './lib/middleware' );
+middleware = require( "./lib/middleware" );
 
-var routes = require( './routes' );
+var routes = require( "./routes" );
 
 app.param( "myproject", middleware.loadOwnProject( Project ));
 app.param( "anyproject", middleware.loadAnyProject( Project ));
 
-app.post( '/api/publish/:myproject',
+app.post( "/api/publish/:myproject",
   filter.isLoggedIn, filter.isStorageAvailable,
   routes.api.publish
 );
 
-app.get( '/dashboard/:lang', function( req, res ) {
-  res.redirect( config.AUDIENCE + "/" + req.params.lang + "/me?app=popcorn" );
-});
+app.get( "/", routes.pages.editor );
+app.get( "/index.html", routes.pages.editor );
+app.get( "/editor", routes.pages.editor );
+app.get( "/editor/:id", routes.pages.editor );
+app.get( "/editor/:id/edit", routes.pages.editor );
+app.get( "/editor/:id/remix", routes.pages.editor );
+app.get( "/templates/basic", routes.pages.editor );
+app.get( "/templates/basic/index.html", routes.pages.editor );
 
-app.get( '/', routes.pages.editor );
-app.get( '/index.html', routes.pages.editor );
-app.get( '/editor', routes.pages.editor );
-app.get( '/editor/:id', routes.pages.editor );
-app.get( '/editor/:id/edit', routes.pages.editor );
-app.get( '/editor/:id/remix', routes.pages.editor );
-app.get( '/templates/basic', routes.pages.editor );
-app.get( '/templates/basic/index.html', routes.pages.editor );
-
-app.get( '/external/make-api.js', function( req, res ) {
+app.get( "/external/make-api.js", function( req, res ) {
   res.sendfile( path.resolve( __dirname, "node_modules/makeapi-client/src/make-api.js" ) );
 });
-app.get( '/external/sso-include.js', function( req, res ) {
+app.get( "/external/sso-include.js", function( req, res ) {
   res.sendfile( path.resolve( __dirname, "node_modules/webmaker-sso/include.js" ) );
 });
-app.get( '/external/jwplayer.js', function( req, res ) {
+app.get( "/external/jwplayer.js", function( req, res ) {
   res.redirect( "//jwpsrv.com/library/" + app.locals.config.jwplayer_key + ".js" );
 });
 
 // Project Endpoints
-app.post( '/api/project/:id?',
+app.post( "/api/project/:id?",
   filter.isLoggedIn,
   filter.isStorageAvailable,
   routes.api.synchronize( Project ),
   routes.make.synchronize
 );
 
-app.post( '/api/delete/:myproject', filter.isLoggedIn, filter.isStorageAvailable, routes.make.remove, routes.api.remove );
-app.get( '/api/remix/:anyproject', filter.isStorageAvailable, routes.api.remix, routes.api.projectResponse( Project ) );
-app.get( '/api/project/:myproject', filter.isLoggedIn, filter.isStorageAvailable, routes.api.find, routes.api.projectResponse( Project ) );
+app.post( "/api/delete/:myproject", filter.isLoggedIn, filter.isStorageAvailable, routes.make.remove, routes.api.remove );
+app.get( "/api/remix/:anyproject", filter.isStorageAvailable, routes.api.remix, routes.api.projectResponse( Project ) );
+app.get( "/api/project/:anyproject", filter.isStorageAvailable, routes.api.find, routes.api.projectResponse( Project ) );
 
 // Firehose Endpoints
-//app.get( '/api/project/:id/remixes', filter.isStorageAvailable, filter.crossOriginAccessible, routes.firehose.remixes );
-//app.get( '/api/projects/recentlyUpdated/:limit?', filter.isStorageAvailable, filter.crossOriginAccessible, routes.firehose.recentlyUpdated );
-//app.get( '/api/projects/recentlyCreated/:limit?', filter.isStorageAvailable, filter.crossOriginAccessible, //routes.firehose.recentlyCreated );
-//app.get( '/api/projects/recentlyRemixed/:limit?', filter.isStorageAvailable, filter.crossOriginAccessible, routes.firehose.recentlyRemixed );
+//app.get( "/api/project/:id/remixes", filter.isStorageAvailable, filter.crossOriginAccessible, routes.firehose.remixes );
+//app.get( "/api/projects/recentlyUpdated/:limit?", filter.isStorageAvailable, filter.crossOriginAccessible, routes.firehose.recentlyUpdated );
+//app.get( "/api/projects/recentlyCreated/:limit?", filter.isStorageAvailable, filter.crossOriginAccessible, //routes.firehose.recentlyCreated );
+//app.get( "/api/projects/recentlyRemixed/:limit?", filter.isStorageAvailable, filter.crossOriginAccessible, routes.firehose.recentlyRemixed );
 
-app.post( '/crash', routes.api.crash );
-app.post( '/feedback', routes.api.feedback );
+app.post( "/crash", routes.api.crash );
+app.post( "/feedback", routes.api.feedback );
 
-app.get( '/healthcheck', routes.api.healthcheck );
+app.get( "/healthcheck", routes.api.healthcheck );
 
-app.get( '/api/butterconfig', function( req, res ) {
+// NOTE:
+// This endpoint is publicly accessible with CORS enabled. Be careful of the information
+// that is attached to it. IE, avoid putting API keys and other more sensitive information
+// here.
+app.get( "/api/butterconfig", middleware.crossOrigin, function( req, res ) {
   res.json({
     "audience": app.locals.config.audience,
     "make_endpoint": app.locals.config.make_endpoint,
+    "node_hubble_endpoint": app.locals.config.node_hubble_endpoint,
     "user_bar": app.locals.config.user_bar,
     "sync_limit": app.locals.config.sync_limit
   });
 });
 
 // routes to be used in text!
-app.get( '/layouts/header.html', function( req, res ) {
-  res.render( '/layouts/header.html', {
+app.get( "/layouts/header.html", function( req, res ) {
+  res.render( "/layouts/header.html", {
     user_bar: app.locals.config.user_bar,
-    audience: app.locals.config.audience
+    audience: app.locals.config.audience,
+    togetherjsEnabled: config.TOGETHERJS_ENABLED
   });
 });
 
@@ -272,20 +287,21 @@ app.get( '/templates/assets/editors/popup/popup-editor.html', routes.path( '/plu
 app.get( '/templates/assets/editors/image/image-editor.html', routes.path( '/plugins/image-editor.html' ) );
 app.get( '/templates/assets/editors/text/text-editor.html', routes.path( '/plugins/text-editor.html' ) );
 app.get( '/templates/assets/editors/toc/toc-editor.html', routes.path( '/plugins/toc-editor.html' ) );
+app.get( "/templates/assets/editors/wikipedia/wikipedia-editor.html", routes.path( "/plugins/wikipedia-editor.html" ) );
 app.get( '/templates/assets/editors/sketchfab/sketchfab-editor.html', routes.path( '/plugins/sketchfab-editor.html' ) );
 
 // Localized Strings
-app.get( "/strings/:lang?", middleware.crossOrigin, i18n.stringsRoute( 'en-US' ) );
+app.get( "/strings/:lang?", middleware.crossOrigin, i18n.stringsRoute( "en-US" ) );
 
 app.put( "/api/image", middleware.processForm, filter.isImage, routes.api.image );
 
 app.listen( config.PORT, function() {
-  console.log( 'HTTP Server started on ' + APP_HOSTNAME );
-  console.log( 'Press Ctrl+C to stop' );
+  console.log( "HTTP Server started on " + APP_HOSTNAME );
+  console.log( "Press Ctrl+C to stop" );
 });
 
 // If we're in running in emulated S3 mode, run a mini
 // server for serving up the "s3" published content.
 if ( emulate_s3 ) {
-  require( 'mox-server' ).runServer( config.MOX_PORT || 12319 );
+  require( "mox-server" ).runServer( config.MOX_PORT || 12319 );
 }
