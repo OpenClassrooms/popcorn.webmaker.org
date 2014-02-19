@@ -40,7 +40,7 @@ function setupStore( storeConfig ) {
 
   async.parallel([
     function( asyncCallback ) {
-      res.render( "embed.html", {
+      res.render( "embed-ios.html", {
         id: res.locals.project.id,
         author: res.locals.project.author,
         title: res.locals.project.name,
@@ -86,16 +86,16 @@ function setupStore( storeConfig ) {
         projectData: utilities.generateProjectDataString( projectData )
       }, function( err, html ) {
         var sanitized = sanitizer.compressHTMLEntities( html ),
-          embedPath = utilities.embedPath( req.session.username, res.locals.project.id );
+          embedTimesheetsPath = utilities.embedTimesheetsPath( req.session.username, res.locals.project.id );
 
-          console.log(embedPath);
+          console.log(embedTimesheetsPath);
           console.log(config.publishStore.type);
 
         if( config.publishStore.type == "local" ) {
-          stores.publish.write( embedPath, sanitized, asyncCallback );
+          stores.publish.write( embedTimesheetsPath, sanitized, asyncCallback );
         }
         else if( config.publishStore.type == "s3" ) {
-          s3.put( embedPath, {
+          s3.put( embedTimesheetsPath, {
             "x-amz-acl": "public-read",
             "Content-Length": Buffer.byteLength( sanitized, "utf8" ),
             "Content-Type": "text/html; charset=UTF-8"

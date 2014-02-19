@@ -3,29 +3,103 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <base href="{{config.app_hostname}}">
+    <!--base href="{{config.app_hostname}}"-->
     <title>{{title}}</title>
     <meta name="viewport" content="width=device-width">
+
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <script src="/external/jwplayer.js"></script>
+    <script src="/external/jquery-watch/jquery.watch.js"></script>
 
     <script src="/external/jsonml/jsonml-html.js"></script>
     <script src="/external/jsonml/jsonml-dom.js"></script>
 
-    <link rel="stylesheet" href="/static/bower/font-awesome/css/font-awesome.min.css">
+    <script src="/external/timesheets-js/timesheets.js"></script>
+    <script src="/external/timesheets-js/timesheets-controls2.js"></script>
+    <script src="/src/embed-timesheets.js"></script>
+
+    <script>
+      var tag = document.createElement('script');
+
+      tag.src = "https://www.youtube.com/iframe_api";
+      var firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+      function onYouTubeIframeAPIReady() {
+        $("#sequences iframe").each(function() {
+            // Instanciate a YT player object
+            var ytPlayer = new YT.Player( this.id, {
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+
+            // Bind it to iframe
+            $( this ).data('ytPlayer', ytPlayer);
+        });
+
+      }
+
+      function onPlayerReady(event) {
+      }
+
+      function onPlayerStateChange(e) {
+          var baseSequence = document.getElementById('talk');
+          if (e.data == -1) { // unstarted
+            //baseSequence.pause();
+          }
+          else if(e.data == YT.PlayerState.ENDED) {
+
+          }
+          else if(e.data == YT.PlayerState.PLAYING) {
+            baseSequence.play();
+          }
+          else if(e.data == YT.PlayerState.PAUSED) {
+            baseSequence.pause();
+          }
+          else if(e.data == YT.PlayerState.BUFFERING) {
+            baseSequence.pause();    
+          }
+          else if(e.data == YT.PlayerState.CUED) {
+            //baseSequence.pause();    
+          }
+      }
+    </script>
 
     {{projectData}}
+
+    <!--link rel="stylesheet" href="/static/bower/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="/templates/basic/style.css">
     <link rel="stylesheet" href="/css/transitions.css">
     <link rel="stylesheet" href="/templates/assets/plugins/popup/popcorn.popup.css">
     <link rel="stylesheet" href="/templates/assets/plugins/image/popcorn.image.css">
     <link rel="stylesheet" href="/templates/assets/plugins/text/popcorn.text.css">
     <link rel="stylesheet" href="/templates/assets/plugins/wikipedia/popcorn.wikipedia.css">
-    <link rel="stylesheet" href="/templates/assets/plugins/sketchfab/popcorn.sketchfab.css">
-    <link rel="stylesheet" href="/css/embed.css">
-    <link rel="stylesheet" href="/css/controls.css">
+    <link rel="stylesheet" href="/templates/assets/plugins/sketchfab/popcorn.sketchfab.css"-->
+    <!--link rel="stylesheet" href="/css/embed.css">
+    <link rel="stylesheet" href="/css/controls.css"-->
+
+  <link rel="stylesheet" type="text/css" href="/external/timesheets-js/style/layout.css"> 
+
+  <style type="text/css">
+    .smil-toc li ul {
+      display: none;
+    }
+    .smil-toc li.current ul {
+      display: block;
+    }
+
+    #sequences iframe {
+        display: none;
+    }
+
+    #sequences iframe[smil="active"] {
+        display: block;
+    }
+  </style>
+
     <!-- This is the embed, the actual content is at the following URL -->
-    <link rel="canonical" href="{{embedShellSrc}}">
+    <!--link rel="canonical" href="{{embedShellSrc}}">
     <meta property="og:site_name" content="Mozilla Webmaker">
     <meta property="og:image" content="https://popcorn.webmaker.org/resources/icons/logo_openclassrooms_retina.png">
     <meta property="og:image:type" content="image/png">
@@ -35,9 +109,51 @@
     <meta property="og:title" content="{{title}}">
     <meta property="og:type" content="video.other">
     <meta property="og:url" content="{{embedShellSrc}}">
-    <script src="/src/embed.js"></script>
+    <!--script src="/src/embed.js"></script-->
     {% include "googleanalytics.html" %}
   </head>
   <body class="embed">
+
+    <div id="slideshow" class="cross-fade">
+        <div id="timecodes"
+              data-timecontainer="excl"
+              data-timeaction="intrinsic"
+              data-mediasync="#talk"
+              data-controls="#timeController"
+              data-navigation="arrows; hash"></div>
+
+        <div id="sequences"
+              data-timecontainer="excl"
+              data-timeaction="intrinsic"
+              data-mediasync="#talk"></div>
+
+        <audio id="talk" muted="true">
+          <source type="audio/ogg"  src="../BlankAudio.ogg" />
+        </audio>
+
+        <nav id="timeController">
+        <!-- Table of Contents -->
+        <div class="smil-toc"></div>
+
+        <!-- timeline + control buttons -->
+        <div class="smil-controlBar">
+          <div class="smil-left">
+            <button class="smil-first"><span>|«</span></button>
+            <button class="smil-prev"><span>«</span></button>
+            <button class="smil-play"><span>▶||</span></button>
+            <button class="smil-next"><span>»</span></button>
+            <button class="smil-last"><span>»|</span></button>
+          </div>
+          <div class="smil-timeline">
+            <div class="smil-timeSegments"></div>
+            <div class="smil-timeCursor"></div>
+          </div>
+          <div class="smil-right smil-currentTime">0:00:00</div>
+        </div> 
+
+      </nav>
+
+    </div>
+
   </body>
 </html>

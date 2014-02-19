@@ -109,7 +109,8 @@
     "webmaker-i18n": "https://github.com/mozilla/node-webmaker-i18n/archive/v0.3.2.tar.gz",
     "webmaker-loginapi": "https://github.com/mozilla/node-webmaker-loginapi/tarball/v0.1.18",
     "webmaker-mediasync": "https://github.com/mozilla/webmaker-mediasync/tarball/v0.1.24",
-    "webmaker-sso": "https://github.com/jbuck/node-webmaker-sso/tarball/v0.0.4"
+    "webmaker-sso": "https://github.com/jbuck/node-webmaker-sso/tarball/v0.0.4",
+    "js-beautify": "1.4.2"
   },
   "optionalDependencies": {
     "node-statsd": "git://github.com/sivy/node-statsd.git#d6997fff",
