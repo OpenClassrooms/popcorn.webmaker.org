@@ -31,7 +31,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
         _shareTabBtn = _rootElement.querySelector( ".share-tab-btn" ),
         _shareTwitter = _rootElement.querySelector( ".butter-share-twitter" ),
         _shareGoogle = _rootElement.querySelector( ".butter-share-google" ),
-        _loginToSaveDialog = _rootElement.querySelector( ".login-to-save-dialog" ),
+        //_loginToSaveDialog = _rootElement.querySelector( ".login-to-save-dialog" ),
         _embedDimensions = _embedSize.value.split( "x" ),
         _embedWidth = _embedDimensions[ 0 ],
         _embedHeight = _embedDimensions[ 1 ],
@@ -148,7 +148,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
       _embedTabBtn.classList.remove( "butter-disabled" );
       _projectLinkButton.classList.remove( "butter-disabled" );
       _projectLinkUrl.classList.remove( "butter-disabled" );
-      _loginToSaveDialog.classList.add( "hidden" );
+      //_loginToSaveDialog.classList.add( "hidden" );
     }
 
     function onLogin() {
@@ -164,7 +164,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
       _projectLinkButton.classList.add( "butter-disabled" );
       _projectLinkUrl.classList.add( "butter-disabled" );
       activateProjectTab( _settingsTabBtn );
-      _loginToSaveDialog.classList.remove( "hidden" );
+      //_loginToSaveDialog.classList.remove( "hidden" );
     }
 
     butter.listen( "projectsaved", onProjectSaved );
@@ -193,7 +193,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
           _embedTabBtn.classList.add( "butter-disabled" );
           _projectLinkButton.classList.add( "butter-disabled" );
           _projectLinkUrl.classList.add( "butter-disabled" );
-          _loginToSaveDialog.classList.remove( "hidden" );
+          //_loginToSaveDialog.classList.remove( "hidden" );
         }
         _viewSourceBtn.href = "view-source:" + _project.iframeUrl;
         updateEmbed( _project.iframeUrl );

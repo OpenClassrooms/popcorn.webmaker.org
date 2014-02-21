@@ -139,12 +139,14 @@ define( [ "localized", "core/eventmanager", "core/trackevent", "./editor",
      * @param {TrackEvent} trackEvent: The trackevent being used to compare against the current open editor.
      */
     _this.closeTrackEventEditor = function( trackEvent ) {
-      var isTrackEventEditor = _currentEditor.getTrackEvent;
+      if( _currentEditor ) {
+        var isTrackEventEditor = _currentEditor.getTrackEvent;
 
-      if ( trackEvent && isTrackEventEditor &&
-          isTrackEventEditor().id === trackEvent.id ) {
+        if ( trackEvent && isTrackEventEditor &&
+            isTrackEventEditor().id === trackEvent.id ) {
 
-        _this.closeEditor();
+          _this.closeEditor();
+        }
       }
     };
 

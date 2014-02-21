@@ -61,9 +61,12 @@ module.exports = function( Project ) {
       Project.update( { email: config.DEFAULT_USER_EMAIL, id: req.body.id, data: projectData },
         function( err, doc ) {
           if ( err ) {
+            console.log("Project Update Error: "+err);
             res.json( 500, { error: err } );
             return;
           }
+            console.log("Project Update Success");
+          res.json( { error: 'okay', project: doc } );
 
           req.project = doc;
           req.makeTags = projectData.tags;
@@ -81,7 +84,7 @@ module.exports = function( Project ) {
             return;
           }
 
-          console.log("Project.create success: "+JSON.stringify(doc));
+          console.log("Project.create success");
           req.project = doc;
 
           //console.log("Project id: "+projectData.makeid);
@@ -98,24 +101,6 @@ module.exports = function( Project ) {
           // Prevent next for claire
           //next();
         });
-/*      Project.find( { email: config.DEFAULT_USER_EMAIL, id: req.body.id }, function( err, doc ) {
-        if ( err ) {
-
-          console.log("find err: "+err);
-          metrics.increment( "project.find.error" );
-          res.json( 500, { error: err } );
-          return;
-        }
-        if ( doc ) {
-          console.log("Project.update");
-          Project.update( { email: config.DEFAULT_USER_EMAIL, id: req.body.id, data: projectData }, onUpdate );
-        } else {
-          console.log("Project.create");
-          Project.create( { email: config.DEFAULT_USER_EMAIL, data: projectData }, onCreate );
-        }
-      });
-    } else {
-      Project.create( { email: config.DEFAULT_USER_EMAIL, data: projectData }, onCreate );*/
 
 
 /*<<<<<<< HEAD
