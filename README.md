@@ -1,7 +1,16 @@
-Butter
+popcorn.webmaker.org - fork for CLAIRE project
 ======
 
-An SDK for authoring Popcorn projects.
+Popcorn Maker is an SDK for authoring Popcorn projects.
+
+Original project repository can be found here:
+https://github.com/mozilla/popcorn.webmaker.org
+
+This fork add some improvements in the context of CLAIRE project. More details here:
+http://www.projet-claire.fr
+http://www.simple-it.fr/blog/2012/04/claire-le-grand-projet-de-rd-de-simple-it
+
+
 
 Supported Platforms
 -------------------
@@ -34,6 +43,7 @@ Environment Setup
 1. `git clone --recursive https://github.com/mozilla/popcorn.webmaker.org.git`
 2. `cd popcorn.webmaker.org`
 3. `npm install`
+4. `bower install`. This command supposed the current user has right to create new directories. If it is not the case, after step 1 run: `sudo chown $USER -R popcorn.webmaker.org`
 
 Running Butter in development mode
 ----------------------------------

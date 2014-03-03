@@ -724,14 +724,14 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
       //var lastChapterTrackEvents = getLastChapterTrackEvent();
 
-      for(var i = 1; i <= _chapterTracks.length; i++) {
+      /*for(var i = 1; i <= _chapterTracks.length; i++) {
         if (!_chapterTracks[i]) continue;
 
         var lastTrackEvent = _chapterTracks[i].getLastTrackEvent();
         lastTrackEvent.popcornOptions.viewEndTime = _media.duration;
         lastTrackEvent.update( lastTrackEvent.popcornOptions );
         lastTrackEvent.view.update( lastTrackEvent.popcornOptions );
-      }
+      }*/
     }
 
     function createTocTrackEvent() {
