@@ -320,6 +320,41 @@
         } //for
       }; //findTrackEventByTime
 
+      this.findTrackWithTocTrackEvent = function(){
+        for( var i=0, l=_tracks.length; i<l; ++i ){
+          var t = _tracks[ i ];
+          for( var j=0; j<t.trackEvents.length; ++j ){
+            var te = t.trackEvents[ j ];
+            if( te.type === "toc" ){
+              return {
+                track: _tracks[ i ],
+                trackEvent: te
+              };
+            }
+          }
+        } //for
+      }; //findTrackWithTocTrackEvent
+
+      this.findTrackWithSequencerTrackEvents = function(){
+        // Find the first track where all track events are of type sequencer
+        for( var i=0, l=_tracks.length; i<l; ++i ){
+          var t = _tracks[ i ],
+            sequencerCount = 0;
+          for( var j=0; j<t.trackEvents.length; ++j ){
+            var te = t.trackEvents[ j ];
+            if( te.type === "sequencer" ){
+              sequencerCount++;
+            }
+          }
+          if( sequencerCount === t.trackEvents.length) {
+            return {
+              track: t
+            };            
+          }
+        } //for
+      }; //findTrackWithTocTrackEvent
+
+
       this.getManifest = function( name ) {
         return _registry[ name ];
       }; //getManifest

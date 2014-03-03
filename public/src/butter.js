@@ -994,9 +994,7 @@ window.Butter = {
           if ( !savedData || savedData.error || !savedData.media ) {
             return loadConfigDefault();
           }
-
-var jsonSavedData = JSON.stringify(savedData);
-
+          
           // otherwise, attempt import
           doImport( savedData );
           finishedCallback( project );

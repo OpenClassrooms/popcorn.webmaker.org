@@ -42,11 +42,12 @@ define( [ "util/time" ],
 
         BOOKMARK_WIDTH = 5; // to align the bookmark
 
-        //CHAPTER_INTERVAL = 0.001,
         CHAPTER_MARK = 0.5, // only materialize a chapter
-        //CHAPTER_MIN_DURATION = 1,
         CHAPTER_MOVE_MARGIN = 1.5;
         CHAPTER_MOVE_MAGNET = 1;
+
+        // In pixels, the width of the magnetable area when dragging a bookmark
+        CHAPTER_MOVE_MAGNET_WIDTH = 20;
 
         // Below this limit a chapter is considered as immediately previous to another one
         CHAPTER_PREV_MARGIN = 1;
@@ -246,7 +247,7 @@ define( [ "util/time" ],
 
     function evalBookmarkPosition( bookmark ) {
       var diff = _currentMousePos - _mouseDownPos;
-      diff = Math.max( 0, Math.min( diff, _width ) );
+      //diff = Math.max( 0, Math.min( diff, _width ) );
       bookmark.time = ( diff + _tracksContainer.element.scrollLeft ) / _tracksContainerWidth * _media.duration;
     } //evalBookmarkPosition
 
@@ -325,15 +326,20 @@ define( [ "util/time" ],
 
       // Example: 1.1 can go at same date of 1
       // Counter example: 2 can't go 
-      if( _currentBookmark != prevBookmark &&
+      /*if( _currentBookmark != prevBookmark &&
         prevBookmark.time + CHAPTER_MOVE_MAGNET >= currentTime ) {
         _currentBookmark.time = prevBookmark.time;
+      }*/
+
+      if( _currentBookmark != prevBookmark &&
+        prevBookmark.div.offsetLeft + CHAPTER_MOVE_MAGNET_WIDTH > ( _timelineMousePos + _tracksContainer.element.scrollLeft ) ) {
+        _currentBookmark.time = prevBookmark.time;
       }
+
 
       // Example: 1 can't go at same date of 1.1 nor 1.2
       else if( _currentBookmark != nextBookmark &&
         nextBookmark.time - CHAPTER_MOVE_MAGNET <= currentTime ) {
-        //_currentBookmark.time = nextBookmark.time;
         return;
       }
       else {        

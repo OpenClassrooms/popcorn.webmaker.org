@@ -254,8 +254,8 @@ define([ "localized", "editor/editor", "editor/base-editor",
       _removeTableBtn.classList.add("visible");
       chapterList.appendChild( newChapterItem );
 
-      chapterStart = Math.round( chapterStart*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
-      chapterEnd = Math.round( chapterEnd*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
+      //chapterStart = Math.round( chapterStart*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
+      //chapterEnd = Math.round( chapterEnd*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
 
       newPopcornOptions.start = Math.round( newPopcornOptions.start*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
       newPopcornOptions.end = Math.round( newPopcornOptions.end*CHAPTER_FLOAT_ACCURACY )/CHAPTER_FLOAT_ACCURACY;
@@ -304,9 +304,9 @@ define([ "localized", "editor/editor", "editor/base-editor",
     function getLastChapterTrackEvent() {
       var lastTrackEvents = [];
 
-      lastTrackEvents[1] = _chapterTracks[1].getLastTrackEvent(),
-      lastTrackEvents[2] = _chapterTracks[2].getLastTrackEvent(),
-      lastTrackEvents[3] = _chapterTracks[3].getLastTrackEvent();
+      if( _chapterTracks[1] ) lastTrackEvents[1] = _chapterTracks[1].getLastTrackEvent();
+      if( _chapterTracks[2] ) lastTrackEvents[2] = _chapterTracks[2].getLastTrackEvent();
+      if( _chapterTracks[3] ) lastTrackEvents[3] = _chapterTracks[3].getLastTrackEvent();
 
       var lastTrackEventStartTime = 0,
         lastTrackEvent;
@@ -714,14 +714,25 @@ define([ "localized", "editor/editor", "editor/base-editor",
     /**
      * Update toc track event when media duration changed.
      */
-    /*function onMediaDurationChanged( e ) {
+    function onMediaDurationChanged( e ) {
       if( _tocTrackEvent ) {
         _tocOptions.start = 0;
         _tocOptions.end = _media.duration;
         _tocTrackEvent.update( _tocOptions );
         _tocTrackEvent.view.update( _tocOptions );
       }
-    }*/
+
+      //var lastChapterTrackEvents = getLastChapterTrackEvent();
+
+      for(var i = 1; i <= _chapterTracks.length; i++) {
+        if (!_chapterTracks[i]) continue;
+
+        var lastTrackEvent = _chapterTracks[i].getLastTrackEvent();
+        lastTrackEvent.popcornOptions.viewEndTime = _media.duration;
+        lastTrackEvent.update( lastTrackEvent.popcornOptions );
+        lastTrackEvent.view.update( lastTrackEvent.popcornOptions );
+      }
+    }
 
     function createTocTrackEvent() {
       if( !_tocTrackEvent ) {
@@ -773,22 +784,24 @@ define([ "localized", "editor/editor", "editor/base-editor",
     }
 
     function createTracks() {
-      _media.clear();
+      // Search for an existing track containing toc track event
+      var tocFound = _media.findTrackWithTocTrackEvent(),
+        mediaTrackFound = _media.findTrackWithSequencerTrackEvents();
 
-      // Let a blank track for media
-      _mediaTrack = _media.addTrack(null, true);
+      if( mediaTrackFound ) {
+        _mediaTrack = mediaTrackFound.track;
+      }
+      else {
+        _mediaTrack = _media.addTrack(null, true);        
+      }
 
-      _tocTrack = _media.insertTrackAfter(_mediaTrack, null, false);
-      //_tocTrack.name = "Table";
-
-      //_chapterTracks[3] = _media.addTrack(null, true);
-      //_chapterTracks[3].name = "Level 3";
-
-      //_chapterTracks[2] = _media.addTrack(null, true);
-      //_chapterTracks[2].name = "Level 2";
-
-      //_chapterTracks[1] = _media.addTrack(null, true);
-      //_chapterTracks[1].name = "Level 1";
+      if( tocFound ) {
+        _tocTrack = tocFound.track;
+      }
+      else {
+        // Create a new track dedicated to track event        
+        _tocTrack = _media.insertTrackAfter(_mediaTrack, null, false);
+      }
 
     }
 
@@ -840,7 +853,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
         for(var j = 0; j < track.trackEvents.length; j++) {
           var trackEvent = track.trackEvents[j];
-          if( trackEvent.type == "toc") {
+          if( trackEvent.type === "toc") {
             _tocTrackEvent = trackEvent;
             break;
           }
@@ -848,8 +861,15 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
         for(var j = 0; j < track.trackEvents.length; j++) {
           var trackEvent = track.trackEvents[j];
-          if( trackEvent.type == "chapter" && trackEvent.popcornOptions.level===1) {
+          if( trackEvent.type === "chapter" && trackEvent.popcornOptions.level === 1) {
             firstLevelTrack = track;
+            _chapterTracks[1] = firstLevelTrack;
+          }
+          if( trackEvent.type === "chapter" && trackEvent.popcornOptions.level === 2) {
+            _chapterTracks[2] = track;
+          }
+          if( trackEvent.type === "chapter" && trackEvent.popcornOptions.level === 3) {
+            _chapterTracks[3] = track;
           }
         }
       }
@@ -859,7 +879,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
       }
 
       // Prevent createTrack
-      $(_tocEditorDiv).data("track", firstLevelTrack);
+      //$(_tocEditorDiv).data("track", firstLevelTrack);
 
       // Editor list item generation is based on json list
       var jsonList = _tocTrackEvent.popcornOptions.jsonml;
@@ -870,6 +890,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
       // Workaround: render to enable dragging on toc
       //render();
 
+      _createTableBtn.style.display = 'none';
       _loaded = true;
     }
 
@@ -894,10 +915,13 @@ define([ "localized", "editor/editor", "editor/base-editor",
             $chapterItem = $(chapterItem),
             contentDiv = chapterItem.querySelector( ".toc-item-content" ),
             deleteBtn = chapterItem.querySelector( ".toc-item-delete" ),
+            createSubBtn = chapterItem.querySelector( ".toc-item-handle" ),
+            createBtn = chapterItem.querySelector( ".toc-item-create" ),
             trackEvent,
             trackEventId = tocItemLink[1]["data-trackevent-id"],
             trackEventStart = tocItemLink[1]["data-start"],
-            trackEventEnd = tocItemLink[1]["data-end"];
+            trackEventEnd = tocItemLink[1]["data-end"],
+            trackEventLevel = tocItemLink[1]["data-level"];
 
           // If no link to track event, move to next item
           if( !trackEventId ) {
@@ -914,6 +938,14 @@ define([ "localized", "editor/editor", "editor/base-editor",
           }
 
           deleteBtn.addEventListener( "click", onDeleteBtnClick, false );
+          createSubBtn.addEventListener( "click", onCreateSubChapterClick, false );
+
+          if( trackEventLevel === "1" ) {
+            createBtn.addEventListener( "click", onCreateChapterClick, false );
+          }
+          else {
+            createBtn.addEventListener( "click", onCreateNextChapterClick, false );        
+          }
 
           _tocEditorDiv.classList.add("visible");
           _removeTableBtn.classList.add("visible");
@@ -925,6 +957,9 @@ define([ "localized", "editor/editor", "editor/base-editor",
 
           startBox = new TimeBox( $chapterItem.find(".toc-item-time-start") );
           //endBox = new TimeBox( $chapterItem.find(".toc-item-time-end") );
+
+          // Dispatch this event to create a chapter mark in timeline
+          _media.dispatch("chapteradded", trackEvent);
 
           // Listen to updates on track event
           trackEvent.listen( "trackeventupdated", onTrackEventUpdated );
@@ -954,7 +989,7 @@ define([ "localized", "editor/editor", "editor/base-editor",
         _this = this;
 
         _createTableBtn.classList.add("visible");
-        //_media.listen("mediacontentchanged", onMediaDurationChanged );
+        _media.listen("mediadurationchanged", onMediaDurationChanged );
 
         // Nestable table of contents now de-activated
         //$('#toc-div').nestable({"maxDepth":CHAPTER_MAX_LEVEL, "group":1});
