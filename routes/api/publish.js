@@ -79,6 +79,46 @@ function setupStore( storeConfig ) {
       });
     },
     function( asyncCallback ) {
+      res.render( "embed-openclassrooms.html", {
+        id: res.locals.project.id,
+        author: res.locals.project.author,
+        title: res.locals.project.name,
+        webmakerURL: config.AUDIENCE,
+        description: description,
+        embedShellSrc: publishUrl,
+        projectUrl: projectUrl,
+        popcorn: utilities.generatePopcornString( projectData ),
+        thumbnail: res.locals.project.thumbnail,
+        background: res.locals.project.background,
+        projectData: utilities.generateProjectDataString( projectData )
+      }, function( err, html ) {
+        var sanitized = sanitizer.compressHTMLEntities( html ),
+          embedOpenClassroomsPath = utilities.embedOpenClassroomsPath( req.session.username, res.locals.project.id );
+
+          console.log(embedOpenClassroomsPath);
+          console.log(config.publishStore.type);
+
+        if( config.publishStore.type == "local" ) {
+          stores.publish.write( embedOpenClassroomsPath, sanitized, asyncCallback );
+        }
+        else if( config.publishStore.type == "s3" ) {
+          s3.put( embedOpenClassroomsPath, {
+            "x-amz-acl": "public-read",
+            "Content-Length": Buffer.byteLength( sanitized, "utf8" ),
+            "Content-Type": "text/html; charset=UTF-8"
+          }).on( "error",
+            asyncCallback
+          ).on( "response", function( s3res ) {
+            if ( s3res.statusCode !== 200 ) {
+              return asyncCallback( "S3.writeEmbed returned HTTP " + s3res.statusCode );
+            }
+
+            asyncCallback();
+          }).end( sanitized );
+        }
+      });
+    },
+    function( asyncCallback ) {
       res.render( "embed-timesheets.html", {
         id: res.locals.project.id,
         author: res.locals.project.author,

@@ -55,6 +55,7 @@ module.exports = function( Project ) {
     // Sanitize project name (i.e., title) and description.
     var projectData = sanitizeProjectData( req.body );
 
+    console.log("1 projectData: "+projectData);
     console.log("1 req.body.id: "+req.body.id);
 
     if ( req.body.id ) {

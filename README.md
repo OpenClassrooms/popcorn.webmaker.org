@@ -40,16 +40,24 @@ Prerequisites
 Environment Setup
 -----------------
 
-1. `git clone --recursive https://github.com/mozilla/popcorn.webmaker.org.git`
+1. `git clone --recursive [repository]`
 2. `cd popcorn.webmaker.org`
 3. `npm install`
 4. `bower install`. This command supposed the current user has right to create new directories. If it is not the case, after step 1 run: `sudo chown $USER -R popcorn.webmaker.org`
+
 
 Running Butter in development mode
 ----------------------------------
 
 1. Run `node server`.
 2. Navigate to [http://localhost:8888/](http://localhost:8888/) in your favourite browser.
+
+If issue: 
+lib/project.js: DB setup error
+ MODULE_NOT_FOUND Cannot find module './binding/Release/node-v11-darwin-x64/node_sqlite3.node'
+
+ Then execute:
+ npm install sqlite3
 
 If you want to change the bind IP or port check the Configuration section below.
 
