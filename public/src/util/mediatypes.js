@@ -2,8 +2,10 @@
  * If a copy of the MIT license was not distributed with this file, you can
  * obtain one at https://raw.github.com/mozilla/butter/master/LICENSE */
 
-define( [ "localized", "util/uri", "text!/api/butterconfig" ],
-  function( Localized, URI, config ) {
+//define( [ "localized", "util/uri", "text!/api/butterconfig" ],
+// Disable localized and buttreconfig for CLAIRE
+define( [ "util/uri" ],
+  function( URI ) {
 
   var REGEX_MAP = {
         YouTube: /^(?:https?:\/\/www\.|https?:\/\/|www\.|\.|^)youtu/,
@@ -15,14 +17,26 @@ define( [ "localized", "util/uri", "text!/api/butterconfig" ],
         "null": /^\s*#t=(?:\d*(?:(?:\.|\:)?\d+)?),?(\d+(?:(?:\.|\:)\d+)?)\s*$/,
         Flickr: /^https?:\/\/(www\.)flickr.com/
       },
+      /*
       YOUTUBE_EMBED_DISABLED = Localized.get ( "Embedding of this YouTube video is disabled" ),
       YOUTUBE_EMBED_UNPLAYABLE = Localized.get( "This YouTube video is unplayable" ),
       YOUTUBE_EMBED_PRIVATE = Localized.get( "Private Video" ),
       ARCHIVE_EMBED_DISABLED = Localized.get( "Embedding of this Archive item is not available yet" ),
       EMBED_UNPLAYABLE = Localized.get( "This media source is unplayable" ),
       SOUNDCLOUD_EMBED_DISABLED = Localized.get( "Embedding of this SoundCloud audio source is disabled" );
+*/
 
-  var nodeHubbleEndpoint = config.node_hubble_endpoint;
+      YOUTUBE_EMBED_DISABLED = "Embedding of this YouTube video is disabled",
+      YOUTUBE_EMBED_UNPLAYABLE = "This YouTube video is unplayable",
+      YOUTUBE_EMBED_PRIVATE = "Private Video",
+      ARCHIVE_EMBED_DISABLED = "Embedding of this Archive item is not available yet",
+      EMBED_UNPLAYABLE = "This media source is unplayable",
+      SOUNDCLOUD_EMBED_DISABLED ="Embedding of this SoundCloud audio source is disabled";
+
+
+  var nodeHubbleEndpoint = '';
+  // Disable buttreconfig for CLAIRE
+  //nodeHubbleEndpoint = config.node_hubble_endpoint;
 
   function jwPlayerFallback( options, successCallback, errorCallback ) {
     // We hit an error trying to load HTML5, try the jwplayer instead
