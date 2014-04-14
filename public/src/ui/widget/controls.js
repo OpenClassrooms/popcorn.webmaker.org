@@ -646,7 +646,7 @@ define( [ "util/lang", "util/time", "util/sanitizer", "text!layouts/controls.htm
 
             scrubber.style.left = ( ( position - ( scrubber.offsetWidth / 2 ) ) / timebar.offsetWidth * 100 ) + "%";
           }
-          tooltipMouseMove( e );
+          //tooltipMouseMove( e );
 
           if( e.currentTarget.id != "controls-bar") {
             p.currentTime( position / timebar.offsetWidth * 100 * p.duration() / 100 );
@@ -678,7 +678,7 @@ define( [ "util/lang", "util/time", "util/sanitizer", "text!layouts/controls.htm
           videoContainer.classList.remove( "no-events" );
 
           timebar.addEventListener( "mouseover", timeMouseOver, false );
-          timebar.addEventListener( "mousemove", tooltipMouseMove, false );
+          //timebar.addEventListener( "mousemove", tooltipMouseMove, false );
           timebar.addEventListener( "mousedown", timeMouseDown, false );
 
           window.removeEventListener( "mouseup", controlsMouseUp, false );
@@ -736,7 +736,7 @@ define( [ "util/lang", "util/time", "util/sanitizer", "text!layouts/controls.htm
           videoContainer.classList.add( "no-events" );
 
           timebar.removeEventListener( "mouseout", timeMouseOut, false );
-          timebar.removeEventListener( "mousemove", tooltipMouseMove, false );
+          //timebar.removeEventListener( "mousemove", tooltipMouseMove, false );
           timebar.removeEventListener( "mousedown", timeMouseDown, false );
           window.addEventListener( "mousemove", timeMouseMove, false );
           window.addEventListener( "mouseup", timeMouseUp, false );

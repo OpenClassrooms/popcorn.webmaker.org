@@ -4,6 +4,73 @@
 
 function init() {
 
+  /*
+   * John Allen 2/10/2014
+   * this code was added to check if a project used a youtube as a source 
+   * and if it was an iPad. If both these conditions are meet go ahead 
+   * and let the iPad view the project, if it's any other type of device
+   * alert and then forward to the homepage.
+  */
+  var initalizeBrowserDetection = {
+
+    checkIfIPadAndSingleSourceYouTube : function(){
+
+      // The popcornDataFn function is in the iframe that plays the 
+      // popcorn project. Its a function so lets turn it into
+      //  a string and check if the projects
+      // JSON has the a SINGLE instance of the string 'youtube'.
+      var stringToCheck = popcornDataFn.toString();
+      var regExStringToFind = /youtube/g;
+      var match;
+      var stringCount = 0;
+      var sourceIsYouTube = false;
+      
+      // check how many times 'youtube' is in the string were checking.
+      while ( match = regExStringToFind.exec(stringToCheck) ){
+        stringCount++
+      }
+
+      // if it's only in the string ONE TIME then the iPad can play it.
+      if(stringCount === 1){
+        sourceIsYouTube = true;
+      }
+
+      var isMobile = false;
+      if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+        isMobile = true;
+      }
+
+      var isAccetedMobile = false; 
+      if( /iPad/i.test(navigator.userAgent) ) {
+        isAccetedMobile = true;
+      }
+
+      // its a regular browser so move ahead
+      if ( !isMobile ){
+        return true;// return we have a normal desktop browser
+      }
+      // were a mobile browser so lets check some more stuff
+      else {
+
+        // were a single youtube source project and an iPad, so were 
+        // cool lets go ahead and play it
+        if( isAccetedMobile && sourceIsYouTube ) {
+          return true;
+        }
+
+        // were NOT a youtube source and NOT an iPad so fail.
+        else{
+          //alert('Were sorry! Your device and this project is not supported by Kettlecorn.');
+          window.location.href = 'http://kettlecorn-edit.innovation-series.com/unsupporteddevice.html';
+        }
+      }
+    }
+  }
+
+  initalizeBrowserDetection.checkIfIPadAndSingleSourceYouTube();
+
+
+
   var stateClasses = [
         "embed-playing",
         "embed-paused",
@@ -384,7 +451,7 @@ function init() {
       "util/accepted-ua",
       "popcorn"
     ],
-    function( URI, LangUtil, Controls, TextboxWrapper, ResizeHandler, MediaUtil, DEFAULT_LAYOUT_SNIPPETS, FLASH ) {
+    function( URI, LangUtil, Controls, TextboxWrapper, ResizeHandler, MediaUtil, DEFAULT_LAYOUT_SNIPPETS ) {
 
       var __defaultLayouts = LangUtil.domFragment( DEFAULT_LAYOUT_SNIPPETS );
       /**
@@ -694,7 +761,7 @@ function init() {
 
               if ( type === "YouTube" && !checkedFlashVersion ) {
                 checkedFlashVersion = true;
-                FLASH.warn();
+                //FLASH.warn();
               }
 
               if ( type === "Archive" ) {

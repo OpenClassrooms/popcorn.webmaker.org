@@ -233,7 +233,7 @@ define( [ "localized", "core/logger", "core/eventmanager", "util/uri", "util/acc
 
         if ( !_checkedFlashVersion ) {
           _checkedFlashVersion = true;
-          FLASH.warn();
+          //FLASH.warn();
         }
       }
       return mediaType;

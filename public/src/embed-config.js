@@ -38,7 +38,6 @@
         "text": "../external/require/text",
         "json": "../external/require/json",
         "l10n": "../external/require/l10n",
-        "i18n": "../external/require/i18n",
 
         // Our other APIs
         "make-api": "../external/make-api",
@@ -84,7 +83,7 @@
     
     name: '../../node_modules/requirejs-middleware/almond',
     include: ['embed-bootstrap'],
-    //optimize: 'none',
+    optimize: 'none',
 
     locale: "fr-fr",
     out: 'embed-built.js',
