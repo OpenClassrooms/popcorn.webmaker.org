@@ -22,3 +22,4 @@ locale/
 !locale/localeinfo.json
 public/external/popcorn-js.BACKUP.7165/
 public/src/embed-built.js
+/.idea/*
