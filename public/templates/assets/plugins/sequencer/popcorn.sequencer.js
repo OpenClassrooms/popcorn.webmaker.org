@@ -25,6 +25,8 @@
 
   var _waiting = 0;
 
+  var MEDIA_LOAD_TIMEOUT = 10000;
+
   var loadingHandler = {
     loading: [],
     compare: function( a, b ) {
@@ -135,6 +137,7 @@
       };
 
       options.readyEvent = function() {
+        clearTimeout( options.loadTimeout );
 
         options._clip.media.style.width = "100%";
         options._clip.media.style.height = "100%";
@@ -242,10 +245,16 @@
       };
 
       options.addSource = function() {
+        if ( options.loadTimeout ) {
+          clearTimeout( options.loadTimeout );
+        }
+
         // if the video is denied for any reason, most cases youtube embedding disabled,
         // don't bother waiting and display fail case.
         if ( options.denied ) {
           options.fail();
+        } else {
+          options.loadTimeout = setTimeout( options.fail, MEDIA_LOAD_TIMEOUT );
         }
 
         for ( var i = 0; i < options.source.length; i++ ) {

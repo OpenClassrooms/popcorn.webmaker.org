@@ -27,6 +27,7 @@ Prerequisites
 * node v0.8 or higher
 * npm (comes with node v0.8 installer)
 * bower (`npm install -g bower`)
+* r.js (`npm install -g requirejs`)
 * A working build environment:
   * Mac OS X - Xcode or Command Line Tools package
   * Windows - Python 2.5+ and Visual Studio 2010; specifically:
@@ -44,6 +45,9 @@ Environment Setup
 2. `cd popcorn.webmaker.org`
 3. `npm install`
 4. `bower install`. This command supposed the current user has right to create new directories. If it is not the case, after step 1 run: `sudo chown $USER -R popcorn.webmaker.org`
+
+5. To build the final embed file for use in CLAIRE, open a console, go to /public/src and type:
+`r.js -o embed-config.js`
 
 
 Running Butter in development mode

@@ -38,7 +38,6 @@
         "text": "../external/require/text",
         "json": "../external/require/json",
         "l10n": "../external/require/l10n",
-        "i18n": "../external/require/i18n",
 
         // Our other APIs
         "make-api": "../external/make-api",
@@ -79,13 +78,12 @@
         "popcorn.chapter": [ "popcorn.core" ],
         "popcorn.wikipedia": [ "popcorn.core" ],
         "popcorn.sketchfab": [ "popcorn.core", "sketchfab-iframe" ],
-        "popcorn.deprecated": [ "popcorn.core" ],
-        "embed-logic": ["popcorn.core"]
+        "popcorn.deprecated": [ "popcorn.core" ]
       },
     
     name: '../../node_modules/requirejs-middleware/almond',
     include: ['embed-bootstrap'],
-    //optimize: 'none',
+    optimize: 'none',
 
     locale: "fr-fr",
     out: 'embed-built.js',
