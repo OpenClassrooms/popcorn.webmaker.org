@@ -109,12 +109,19 @@ define([ "WebmakerUI", "localized", "dialog/dialog", "util/lang", "l10n!/layouts
       dialog.open();
     }
 
-    function afterSave() {
-      openProjectEditor();
-      togglePreviewButton( true );
-      toggleProjectNameListeners( true );
-      toggleDeleteProject( true );
-    }
+      function afterSave() {
+          openProjectEditor();
+          sendMessageToParentFrame();
+          togglePreviewButton( true );
+          toggleProjectNameListeners( true );
+          toggleDeleteProject( true );
+      }
+
+      function sendMessageToParentFrame() {
+          if ( butter.project.id && butter.project.isSaved ) {
+              parent.postMessage("butter.project.id: "+butter.project.id,"*");
+          }
+      }
 
     function submitSave() {
       toggleSaveButton( false );
