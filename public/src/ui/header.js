@@ -13,6 +13,7 @@ define([ "WebmakerUI", "localized", "dialog/dialog", "util/lang", "l10n!/layouts
         _rootElement = Lang.domFragment( HEADER_TEMPLATE, ".butter-header" ),
         _saveContainer = _rootElement.querySelector( ".butter-save-container" ),
         _saveButton = _saveContainer.querySelector( ".butter-save-btn" ),
+        _closeButton = _rootElement.querySelector( ".butter-close-btn" ),
         _projectTitle = _rootElement.querySelector( ".butter-project-title" ),
         _projectName = _projectTitle.querySelector( ".butter-project-name" ),
         _clearEvents = _rootElement.querySelector( ".butter-clear-events-btn" ),
@@ -110,17 +111,22 @@ define([ "WebmakerUI", "localized", "dialog/dialog", "util/lang", "l10n!/layouts
     }
 
       function afterSave() {
-          openProjectEditor();
-          sendMessageToParentFrame();
-          togglePreviewButton( true );
-          toggleProjectNameListeners( true );
-          toggleDeleteProject( true );
+        openProjectEditor();
+        sendMessageToParentFrame();
+        togglePreviewButton( true );
+        toggleProjectNameListeners( true );
+        toggleDeleteProject( true );
       }
 
       function sendMessageToParentFrame() {
-          if ( butter.project.id && butter.project.isSaved ) {
-              parent.postMessage("butter.project.id: "+butter.project.id,"*");
-          }
+        if ( butter.project.id && butter.project.isSaved ) {
+          var message = {};
+          message.type = "saved";
+          message.value = butter.project.id;
+
+          // Send message to parent frame
+          parent.postMessage(message, "*");
+        }
       }
 
     function submitSave() {
@@ -133,6 +139,7 @@ define([ "WebmakerUI", "localized", "dialog/dialog", "util/lang", "l10n!/layouts
         } else {
           toggleSaveButton( true );
           togglePreviewButton( false );
+          toggleCloseButton( false );
           toggleProjectNameListeners( true );
           showErrorDialog( Localized.get( "There was a problem saving your project" ) );
         }
@@ -152,8 +159,30 @@ define([ "WebmakerUI", "localized", "dialog/dialog", "util/lang", "l10n!/layouts
       }
     }
 
+    function closeBtnHandler() {
+      // If project is saved, send message to the parent frame
+      // that will be in charge of closing the window. 
+      if ( butter.project.isSaved ) {
+        var message = {};
+        message.type = "close";
+
+        // Send message to parent frame
+        parent.postMessage(message, "*");
+      }
+    }
+
     function openProjectEditor() {
       butter.editor.openEditor( "project-editor" );
+    }
+
+    function toggleCloseButton( on ) {
+      if ( on ) {
+        _closeButton.classList.remove( "butter-disabled" );
+        _closeButton.addEventListener( "click", closeBtnHandler, false );
+      } else {
+        _closeButton.classList.add( "butter-disabled" );
+        _closeButton.removeEventListener( "click", closeBtnHandler, false );
+      }
     }
 
     function toggleSaveButton( on ) {
@@ -265,11 +294,13 @@ define([ "WebmakerUI", "localized", "dialog/dialog", "util/lang", "l10n!/layouts
     this.views = {
       dirty: function() {
         togglePreviewButton( false );
+        toggleCloseButton( false );
         toggleSaveButton( butter.cornfield.authenticated() );
         toggleProjectNameListeners( butter.cornfield.authenticated() );
       },
       clean: function() {
         togglePreviewButton( true );
+        toggleCloseButton( true );
         toggleSaveButton( false );
       },
       login: function() {
@@ -277,11 +308,13 @@ define([ "WebmakerUI", "localized", "dialog/dialog", "util/lang", "l10n!/layouts
 
         toggleProjectNameListeners( butter.cornfield.authenticated() );
         togglePreviewButton( isSaved );
+        toggleCloseButton( isSaved );
         toggleSaveButton( !isSaved && butter.cornfield.authenticated() );
         toggleDeleteProject( isSaved && butter.cornfield.authenticated() );
       },
       logout: function() {
         togglePreviewButton( false );
+        toggleCloseButton( false );
         toggleSaveButton( false );
         toggleProjectNameListeners( false );
       }
