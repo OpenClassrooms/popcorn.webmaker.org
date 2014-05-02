@@ -26,12 +26,12 @@ define([ "WebmakerUI", "localized", "dialog/dialog", "util/lang", "l10n!/layouts
         _toolTip, _loginToSaveTooltip, _loginToNameTooltip, _loginToPreviewTooltip, _saveToPreviewTooltip,
         _projectDetails = new ProjectDetails( butter ),
         _togetherJS,
-        _langSelector = _rootElement.querySelector( "#lang-picker" ),
+        //_langSelector = _rootElement.querySelector( "#lang-picker" ),
         _togetherjsBtn = _rootElement.querySelector( ".together-toggle" ),
         _togetherJSSyncer;
 
     // URL redirector for language picker
-    WebmakerUI.langPicker( _langSelector );
+    //WebmakerUI.langPicker( _langSelector );
 
     // create a tooltip for the plrojectName element
     _toolTip = ToolTip.create({

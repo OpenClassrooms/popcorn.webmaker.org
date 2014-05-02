@@ -58,7 +58,7 @@ app.configure( function() {
   }));
   app.use(helmet.iexss());
   app.use(helmet.contentTypeOptions());
-//  app.use(helmet.xframe('allow-from', 'http://fr.openclassrooms.lan'));
+  app.use(helmet.xframe('allow-from', '*'));
   if ( !!config.FORCE_SSL ) {
     app.use( helmet.hsts() );
     app.enable( "trust proxy" );
@@ -144,7 +144,8 @@ app.configure( function() {
     .use( express.cookieParser() )
     .use( express.cookieSession( config.session ) )
     .use( express.csrf() )
-    .use( helmet.xframe('allow-from', 'http://fr.openclassrooms.lan') )
+    .use( helmet.xframe('allow-from', '*') )
+//    .use( helmet.xframe('allow-from', 'http://fr.openclassrooms.lan') )
     /* Show Zeus who's boss
      * This only affects requests under /api and /persona, not static files
      * because the static file writes the response header before we hit this middleware
