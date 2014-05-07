@@ -571,12 +571,6 @@ function init() {
               jsonToc,
               htmlToc,
               checkedFlashVersion;
-/*=======
-              toggler = $( ".attribution-logo" ),
-              closeBtn = $( ".attribution-close" ),
-              container = $( ".attribution-info" ),
-              checkedFlashVersion;
->>>>>>> mozilla/master*/
 
           // Backwards compat for old layout. Removes the null media that's shown there.
           if ( attributionMedia ) {
@@ -894,11 +888,11 @@ function init() {
     }
   );
 
-  require(["localized", "util/shims"], function( Localized ) {
-    Localized.ready(function() {
-      require([ "embed-main" ]);
-    });
-  });
+//  require(["localized", "util/shims"], function( Localized ) {
+//    Localized.ready(function() {
+//      require([ "embed-main" ]);
+//    });
+//  });
 }
 
 document.addEventListener( "DOMContentLoaded", function() {
